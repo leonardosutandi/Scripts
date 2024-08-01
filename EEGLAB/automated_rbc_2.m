@@ -1,14 +1,15 @@
 %% participant info
 
-% group = 'C';
-% participantNum = 'p1';
+% group = 'X';
+% participantNum = 'X';
 
 %% load preprocessed dataset
 
+% for main dataset
 EEG1 = pop_loadset('filename',['PP_participant_' participantNum '.set'], ...
                   'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
 
-%% Automated rejection
+%% Automated channel rejection
 
 % EEG = pop_clean_rawdata(EEG, 'FlatlineCriterion',5, ...
 %                              'ChannelCriterion',0.8, ...
@@ -19,24 +20,44 @@ EEG1 = pop_loadset('filename',['PP_participant_' participantNum '.set'], ...
 %                              'BurstRejection','on', ...
 %                              'Distance','Euclidian', ...
 %                              'WindowCriterionTolerances',[-Inf 7] );
+
+% Main dataset
 EEG = pop_clean_rawdata(EEG1, 'FlatlineCriterion',5, ...
-                             'ChannelCriterion',0.8, ...
+                             'ChannelCriterion',0.9, ...
                              'LineNoiseCriterion',4, ...
                              'Highpass','off', ...
                              'BurstCriterion','off', ...
                              'WindowCriterion','off', ...
                              'BurstRejection','off', ...
                              'Distance','Euclidian');
+
 % Visualise removed channels (TAKE NOTE)
 vis_artifacts(EEG, EEG1);
 
 % , ...
 %                              'channels_ignore',{'EXG3','EXG4','EXG5','EXG6','EXG7','EXG8'}
+% pop_rejchan
+
+%% reject same channels in ICA
+
+% % for ICA (so EEG index = EEGica index)
+% EEGica = pop_loadset('filename',['SepICA_participant_' participantNum '.set'], ...
+%                   'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
+% % Through Scroll, remove portions before block starts
+% pop_eegplot(EEGica, 1, 1, 1);
+% % remove same channel in ICA
+% EEGica = pop_select(EEGica);
+
+%% Remove bad data portion (including before triggers)
+
 %% Save dataset
 
-[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'setname','Data Bad Channels/Data Removed','gui','off'); 
+% [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'setname','Data Bad Channels/Data Removed','gui','off'); 
 EEG = pop_saveset(EEG, 'filename',['RBC_participant_' participantNum '.set'], ...
                        'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
+
+% EEGica = pop_saveset(EEGica, 'filename',['SepICA1_participant_' participantNum '.set'], ...
+%                        'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
 
 eeglab redraw
 
