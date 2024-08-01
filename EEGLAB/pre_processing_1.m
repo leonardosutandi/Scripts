@@ -1,7 +1,7 @@
 %% Participant Information Input
 
 group = 'C';
-participantNum = 'p1';
+participantNum = '1';
 
 %% Import raw dataset
 
@@ -64,49 +64,32 @@ EEG = pop_resample( EEG, 512);
 
 %% Bandpass filter
 
+% for main dataset
 EEG = pop_eegfiltnew(EEG,'locutoff',0.5, ...
                          'hicutoff', 40); 
 
+% for ICA
+EEGica = pop_eegfiltnew(EEG,'locutoff',1, ...
+                         'hicutoff', 40); 
 
 %% Notch filter
 
 % line noise
-EEG = pop_cleanline(EEG, 'bandwidth',2,'chanlist',[1:70] ,'computepower',1,'linefreqs',[50 100], ...
-                         'newversion',0,'normSpectrum',0,'p',0.01,'pad',2,'plotfigures',0, ...
-                         'scanforlines',0,'sigtype','Channels','taperbandwidth',2,'tau',100, ...
-                         'verb',1,'winsize',4,'winstep',1);
-% harmonics
-% EEG = pop_cleanline(EEG, 'bandwidth',2,'chanlist',[1:70] ,'computepower',1,'linefreqs',100, ...
+% EEG = pop_cleanline(EEG, 'bandwidth',2,'chanlist',[1:70] ,'computepower',1,'linefreqs',[50 100], ...
 %                          'newversion',0,'normSpectrum',0,'p',0.01,'pad',2,'plotfigures',0, ...
 %                          'scanforlines',0,'sigtype','Channels','taperbandwidth',2,'tau',100, ...
 %                          'verb',1,'winsize',4,'winstep',1);
 
-%% Save Processed data
+%% Save datasets
 
-[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'setname','Data Pre-Processed','gui','off'); 
-
+% Primary dataset
 EEG = pop_saveset(EEG, 'filename',['PP_participant_' participantNum '.set'], ...
                        'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
+% ICA dataset
+EEGica = pop_saveset(EEGica, 'filename',['SepICA_participant_' participantNum '.set'], ...
+                       'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
+
 eeglab redraw;
-
-%% Saving current dataset
-
-% % Save to GUI: use after each step
-% [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'setname','BDF file bc rm','gui','off');
-% % Save to file: use at the end of the script
-% EEG = pop_saveset(EEG, 'filename',['PP_participant_' participantNum '.set'],'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
