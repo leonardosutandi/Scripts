@@ -1,7 +1,7 @@
 %% Participant Information Input
 
 group = 'C';
-participantNum = '1';
+participantNum = '8';
 
 %% Import raw dataset
 
@@ -11,8 +11,10 @@ EEG = pop_biosig(['C:\MATLAB\exp_1\results\EEG\' group '\participant_' ...
 
 %% Set channel location
 
-EEG=pop_chanedit(EEG, {'lookup', ...
+EEG = pop_chanedit(EEG, {'lookup', ...
     'C:\\MATLAB\\toolboxes\\eeglab2024.0\\plugins\\dipfit\\standard_BEM\\elec\\standard_1005.elc'});
+
+% EEG.chanlocs = readlocs('C:\\MATLAB\\toolboxes\\eeglab2024.0\\plugins\\dipfit\\standard_BEM\\elec\\standard_1005.elc');
 
 %% Remove unused channels
 
@@ -60,7 +62,7 @@ EEG = pop_selectevent( EEG, 'type',{'condition 26'},'renametype','accIncor','del
 
 %% Downsample to 512 Hz (min. 2.5x highest foi)
 
-EEG = pop_resample( EEG, 512); 
+EEG = pop_resample(EEG, 512);
 
 %% Bandpass filter
 
@@ -74,7 +76,7 @@ EEGica = pop_eegfiltnew(EEG,'locutoff',1, ...
 
 %% Notch filter
 
-% line noise
+% % line noise
 % EEG = pop_cleanline(EEG, 'bandwidth',2,'chanlist',[1:70] ,'computepower',1,'linefreqs',[50 100], ...
 %                          'newversion',0,'normSpectrum',0,'p',0.01,'pad',2,'plotfigures',0, ...
 %                          'scanforlines',0,'sigtype','Channels','taperbandwidth',2,'tau',100, ...
