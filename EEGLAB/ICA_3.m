@@ -4,35 +4,43 @@
 % participantNum = 'x';
 
 %% load and prepare Seperate ICA dataset
-EEGica = pop_loadset('filename',['SepICA_participant_' participantNum '.set'], ...
+EEGica = pop_loadset('filename',['SepICA1_participant_' participantNum '.set'], ...
                   'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
 
-% Through scroll, remove bad portions espec. before block starts
-pop_eegplot(EEGica, 1, 1, 1);
-% remove same channels in ICA as removed in rbc
-EEGica = pop_select(EEGica);
+% % line noise
+% EEGica = pop_cleanline(EEGica, 'bandwidth',2,'chanlist',[1:70] ,'computepower',1,'linefreqs',[50 100], ...
+%                          'newversion',0,'normSpectrum',0,'p',0.01,'pad',2,'plotfigures',0, ...
+%                          'scanforlines',0,'sigtype','Channels','taperbandwidth',2,'tau',100, ...
+%                          'verb',1,'winsize',4,'winstep',1);
+
+% % Through scroll, remove bad portions espec. before block starts
+% EEGica = pop_eegplot(EEGica, 1, 1, 1);
+% 
+% % remove same channels in ICA dataset as removed in rbc (including EXGs)
+% EEGica = pop_select(EEGica);
 
 %% ICA
+
+% EEGica = pop_resample( EEGica, 200); 
 % Run ICA decomposition
 EEGica = pop_runica(EEGica, 'icatype', 'runica', 'extended',1,'rndreset','yes','interrupt','on');
 
-% Compute and pop ICLabel components
-pop_iclabel(EEGica, 'default');
+%% Compute and pop ICLabel components
+pop_iclabel(EEGica, 'default'); 
 pop_viewprops(EEGica, 0);
+
+EEGica = pop_saveset(EEGica, 'filename',['ICAWeight_participant_' participantNum '.set'], ...
+                       'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
+
 
 %% load main (RBC) dataset
 EEG = pop_loadset('filename',['RBC_participant_' participantNum '.set'], ...
                   'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
 
 %% Apply ICA to original dataset
-% 
-% EEG = pop_editset(EEG, 'icaweights', ['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum ...
-%                                       '\\SepICA2_participant_' participantNum '.set']);
-% EEG = pop_editset(EEG, 'icaweights', 'ALLEEG(1).icaweights', 'icasphere', 'ALLEEG(1).icasphere', 'icachansind', 'ALLEEG(1).icachansind');
-
-% EEG = pop_mergeset(ALLEEG, [2], 1);
 
 % Tranfer ICA related components to main dataset
+EEG.icaact = EEGica.icaact;
 EEG.icawinv = EEGica.icawinv;
 EEG.icaweights = EEGica.icaweights;
 EEG.icasphere = EEGica.icasphere;
@@ -42,7 +50,7 @@ EEG.icachansind = EEGica.icachansind;
 EEG = pop_subcomp(EEG);
 
 %% Save dataset
-% [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'setname','Data ICA Removed','gui','off'); 
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'setname','Data ICA Removed','gui','off'); 
 EEG = pop_saveset(EEG, 'filename',['ICA_participant_' participantNum '.set'], ...
                        'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
 
