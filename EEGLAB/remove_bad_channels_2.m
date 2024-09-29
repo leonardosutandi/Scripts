@@ -10,12 +10,15 @@ EEG = pop_loadset('filename',['PP_participant_' participantNum '.set'], ...
 
 %% plot power spectrum + spectoplot
 pop_eegplot(EEG, 1, 1, 1);
-pop_spectopo(EEG);
+% pop_spectopo(EEG);
 
 % remove bad channel
 EEG = pop_select(EEG);
 
 %% reject same channels in Seperate ICA Dataset
+
+% separate dataset for ICA decomposition. ICA weights to be transferred to
+% actual dataset to be analysed
 
 % for ICA (so EEG index = EEGica index)
 EEGica = pop_loadset('filename',['SepICA_participant_' participantNum '.set'], ...
