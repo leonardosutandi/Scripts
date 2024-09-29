@@ -133,34 +133,6 @@ EEG6 = pop_saveset(EEG6, 'filename',[epoch '_participant_' participantNum '.set'
 eeglab redraw;
 
 
-%% For loop?
-% trialTypes = {'NoGrat', 'Grat'};
-% ttTimeWindow = [0 4];
-% cueTypes = {'cueLeft', 'cueRight', 'cueNeutral'};
-% ctTimeWindow = [-1 1.5];
-% epoch = ['NG_left', 'NG_right', 'NG_neutral','G_left','G_right', 'G_neutral']; 
-% 
-% for i = 1:length(trialTypes)
-% 
-%     % for each element
-%     trialType = trialTypes{i};
-% 
-%     % Epoch based on trial type first
-%     EEG = pop_epoch( EEG, {trialType}, ttTimeWindow, 'newname', 'Data Trial Cond. Epoched', 'epochinfo', 'yes');
-% 
-%     % for each trial type, these cues:
-%     for j = 1:length(cueTypes)
-%         cueType = cueTypes{j};
-%         % Cue Type
-%         EEG = pop_epoch( EEG, cueType, ctTimeWindow, 'newname', 'Data Cue Epoched', 'epochinfo', 'yes');
-%         % Save each cue type
-%         EEG = pop_saveset(EEG, 'filename',['_participant_x.set'], ...
-%                        'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_x\\']);
-%         end
-% 
-% end
-
-
 
 
 
