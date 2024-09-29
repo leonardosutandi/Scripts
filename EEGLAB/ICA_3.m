@@ -13,25 +13,26 @@ EEGica = pop_loadset('filename',['SepICA1_participant_' participantNum '.set'], 
 %                          'scanforlines',0,'sigtype','Channels','taperbandwidth',2,'tau',100, ...
 %                          'verb',1,'winsize',4,'winstep',1);
 
-% % Through scroll, remove bad portions espec. before block starts
-% EEGica = pop_eegplot(EEGica, 1, 1, 1);
-% 
-% % remove same channels in ICA dataset as removed in rbc (including EXGs)
-% EEGica = pop_select(EEGica);
-
 %% ICA
 
-% EEGica = pop_resample( EEGica, 200); 
 % Run ICA decomposition
 EEGica = pop_runica(EEGica, 'icatype', 'runica', 'extended',1,'rndreset','yes','interrupt','on');
 
 %% Compute and pop ICLabel components
+
 pop_iclabel(EEGica, 'default'); 
 pop_viewprops(EEGica, 0);
 
+% Save ICA Weight
 EEGica = pop_saveset(EEGica, 'filename',['ICAWeight_participant_' participantNum '.set'], ...
                        'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
 
+%% Recheck ICA Comps.
+% % in case of pause, reload ICA weight
+EEGica = pop_loadset('filename',['ICAWeight_participant_' participantNum '.set'], ...
+                  'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
+% pop_iclabel(EEGica, 'default'); 
+% pop_viewprops(EEGica, 0);
 
 %% load main (RBC) dataset
 EEG = pop_loadset('filename',['RBC_participant_' participantNum '.set'], ...
@@ -50,7 +51,7 @@ EEG.icachansind = EEGica.icachansind;
 EEG = pop_subcomp(EEG);
 
 %% Save dataset
-[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'setname','Data ICA Removed','gui','off'); 
+% [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'setname','Data ICA Removed','gui','off'); 
 EEG = pop_saveset(EEG, 'filename',['ICA_participant_' participantNum '.set'], ...
                        'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' group '\\participant_' participantNum '\\']);
 
