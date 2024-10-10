@@ -1,0 +1,110 @@
+---
+title: "eeg_wrangling_2"
+author: "Leonardo Sutandi"
+date: "2024-10-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# Load Datasets
+
+```{r}
+C_collapsed <- read_csv("C:/R/exp_1/results/eeg/C_collapsed.csv")
+# MO_collapsed <- read_csv("C:/R/exp_1/results/eeg/MO_collapsed.csv")
+# MA_collapsed <- read_csv("C:/R/exp_1/results/eeg/MA_collapsed.csv")
+```
+
+
+# Control
+
+```{r}
+C_wrang <- pivot_longer(
+  data = C_collapsed,
+  cols = NG_Left_right_Occ:G_Neutral_left_Par,
+  names_to = c("trialType", "cuePos", "hemis", "ROI"),
+  names_pattern = "(.*)_(.*)_(.*)_(.*)",
+  values_to = "alpha",
+  values_transform = list(trialType = as.character,
+                         cuePos = as.character,
+                         Hemis = as.character,
+                         ROI = as.character,
+                         alpha = as.numeric)
+)
+```
+
+
+# Migraine with Aura (MA)
+
+```{r}
+# MA_wrang <- pivot_longer(
+#   data = MA_collapsed,
+#   cols = NG_Left_right_Occ:G_Neutral_left_Par,
+#   names_to = c("trialType", "cuePos", "Hemis", "ROI"),
+#   names_pattern = "(.*)_(.*)_(.*)_(.*)",
+#   values_to = "alpha",
+#   values_transform = list(trialType = as.character,
+#                          cuePos = as.character,
+#                          Hemis = as.character,
+#                          ROI = as.character,
+#                          alpha = as.numeric)
+# )
+```
+
+
+# Migraine without Aura (MO)
+
+```{r}
+# MO_wrang <- pivot_longer(
+#   data = MO_collapsed,
+#   cols = NG_Left_right_Occ:G_Neutral_left_Par,
+#   names_to = c("trialType", "cuePos", "Hemis", "ROI"),
+#   names_pattern = "(.*)_(.*)_(.*)_(.*)",
+#   values_to = "alpha",
+#   values_transform = list(trialType = as.character,
+#                          cuePos = as.character,
+#                          Hemis = as.character,
+#                          ROI = as.character,
+#                          alpha = as.numeric)
+# )
+```
+
+# Combine all dataset
+```{r}
+fullData <- full_join(C_wrang, MA_wrang) |>
+  full_join(MO_wrang)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
