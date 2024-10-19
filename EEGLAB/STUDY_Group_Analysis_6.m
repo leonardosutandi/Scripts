@@ -1,14 +1,16 @@
+
 %% B) Group
 
-% allC =  {'participant_1', 'participant_4','participant_5', 'participant_6', 'participant_8', ...
-%          'participant_12', 'participant_13', 'participant_14', 'participant_15', 'participant_16'};
-% allMA = {'participant_7', 'participant_9', 'participant_11'};
+% allC =  {'participant_4','participant_5', 'participant_6', 'participant_8', ...
+%          'participant_12', 'participant_13', 'participant_14', 'participant_15', ...
+%          'participant_16', 'participant_18', 'participant_19'};
+% allMA = {'participant_7', 'participant_9', 'participant_11', 'participant_20'};
 % allMO = {'participant_2', 'participant_3', 'participant_10','participant_17'};
 
-
-allC =  {'participant_12', 'participant_13', 'participant_14', 'participant_15'};
-allMA = {'participant_9', 'participant_11'};
-allMO = {'participant_10','participant_17'};
+% tes =  {'participant_19', 'participant_18'};
+allC =  {'participant_8', 'participant_12', 'participant_13', 'participant_14'};
+allMA = {'participant_7', 'participant_9', 'participant_11', 'participant_20'};
+allMO = {'participant_2', 'participant_3', 'participant_10','participant_17'};
 
 %% C) Conditions
 
@@ -45,7 +47,7 @@ rightPar = {'TP8','CP6','CP4','CP2','P2','P4','P6','P8','P10'};
 
 %% E) Title
 
-titleList = {'Left Parietal', ...
+chanList = {'Left Parietal', ...
              'Right Parietal', ...
              'Left Occipital', ...
              'Right Occipital'};
@@ -64,7 +66,23 @@ allGrp = allC;
 % C) Conditions
 condType = condList{1};
 % D) Channel Group
-chans = rightOcc;
+chans = leftOcc;
+
+% order:
+% C > condList 123456 > leftOcc   CHECK = 
+% C > condList 123456 > rightOcc  CHECK = 
+% C > condList 123456 > leftPar   CHECK = 
+% C > condList 123456 > rightPar  CHECK = 
+%
+% MO > condList 123456 > leftOcc  CHECK = 
+% MO > condList 123456 > rightOcc CHECK = 
+% MO > condList 123456 > leftPar  CHECK = 
+% MO > condList 123456 > rightPar CHECK = 
+%
+% MA > condList 123456 > leftOcc  CHECK = 
+% MA > condList 123456 > rightOcc CHECK = 
+% MA > condList 123456 > leftPar  CHECK = 
+% MA > condList 123456 > rightPar CHECK = 
 
 % <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 % <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -72,26 +90,39 @@ chans = rightOcc;
 
 % Dependents for title
 if isequal(chans, leftPar)
-    title = titleList(1);
-    titleSave = 'leftPar';
+    titleChan = chanList(1);
+    chanTitle = 'left_Par';
 elseif isequal(chans, rightPar)
-    title = titleList(2);
-    titleSave = 'rightPar';
+    titleChan = chanList(2);
+    chanTitle = 'right_Par';
 elseif isequal(chans, leftOcc)
-    title = titleList(3);
-    titleSave = 'leftOcc';
+    titleChan = chanList(3);
+    chanTitle = 'left_Occ';
 elseif isequal(chans, rightOcc)
-    title = titleList(4);
-    titleSave = 'rightOcc';
+    titleChan = chanList(4);
+    chanTitle = 'right_Occ';
 end
 
+if isequal(condType, condList{1})
+    condTitle = 'NG_Left';
+elseif isequal(condType, condList{2})
+    condTitle = 'NG_Right';
+elseif isequal(condType, condList{3})
+    condTitle = 'NG_Neutral';
+elseif isequal(condType, condList{4})
+    condTitle = 'G_Left';
+elseif isequal(condType, condList{5})
+    condTitle = 'G_Right';
+elseif isequal(condType, condList{6})
+    condTitle = 'G_Neutral';
+end
+
+condChan = [condTitle '_' chanTitle];
 
 %% Load Dataset
-
-% This chunk saves all participants from every group in 1 STUDY (but ONLY 1 condition and 1 channel group)
-
+% NOT IN USE
 % [ALLEEG EEG CURRENTSET ALLCOM] = eeglab;
-
+% 
 % for i = 1:length(allC)
 %     [STUDY ALLEEG] = std_editset( STUDY, ALLEEG, 'name', condType ,'commands',{ ...
 %         {'index',i,'load',['C:\\MATLAB\\exp_1\\results\\EEG\\C\\' allC{i} '\\' condType '_' allC{i} '.set']}, ...
@@ -112,6 +143,10 @@ end
 %         {'index',[k + length(allC) + length(allMA)],'subject',allMO{k}, 'group', 'MO'}}, ...
 %         'updatedat','on','rmclust','on' );
 % end
+% 
+% %save
+% pop_savestudy( STUDY, EEG, 'filename',[condType '_' titleSave '.study'], ...
+%                            'filepath',['C:\\MATLAB\\exp_1\\results\\EEG\\' grp 'STUDY\\'],'resavedatasets','on');
 
 %% Export for R
 
@@ -132,28 +167,30 @@ for i = 1:length(allGrp)
                                                     'recompute','on', ...
                                                     'erp','on','erpparams',{'rmbase',[-1000 -200] }, ...
                                                     'spec','on', 'specparams',{'specmode','fft','logtrials','off'}, ...
-                                                    'ersp','on','erspparams',{'rmerp', 'on', ...
-                                                                              'cycles',[3 0.8] , ...
+                                                    'ersp','on','erspparams',{'rmerp', 'off', ...
+                                                                              'tlimits', [-1000 1500], ...
+                                                                              'freqs', [5 30], ... 
+                                                                              'cycles',[5 0.8] , ...
                                                                               'baseline',[-1000 -200], ...
                                                                               'basenorm', 'off', ...
                                                                               'plotphase', 'off', ...
                                                                               'padratio', 2, ...
                                                                               'freqscale', 'linear' ...
-                                                                              'winsize', 512, ...
-                                                                              'nfreqs', 100, ... %faster computation
-                                                                              'ntimesout', 200}, ... %faster computation
+                                                                              'winsize', 512 ...
+                                                                              }, ... 
                                                     'itc','on');
 
+                                                                              % 'nfreqs', 100, ... %faster comp
+                                                                              % 'ntimesout', 200, ... %faster comp
     % Set parameter
-    STUDY = pop_erspparams(STUDY, 'freqrange',[0 40], ...
-                                  'ersplim', [-5.4 5.4], ...
-                                  'subbaseline', 'on', ...
+    STUDY = pop_erspparams(STUDY, 'subbaseline', 'on', ...
                                   'averagemode', 'ave', ...
                                   'averagechan','on');
-   
+
     % Get ersptimes erspfreqs
     if i == 1
-        [x x ersptimes erspfreqs x x x] = std_erspplot(STUDY,ALLEEG, 'channels',chans, ...
+        [x x ersptimes erspfreqs x x x] = std_erspplot(STUDY,ALLEEG, ...
+                                                                     'channels',chans, ...
                                                                      'subject', allGrp{i}, ...
                                                                      'plotsubjects', 'off', ...
                                                                      'noplot', 'on', ...
@@ -163,7 +200,7 @@ for i = 1:length(allGrp)
 
     % <<<<<<<<<<<<<<<<<<<<<<<<< Select specific frequency and time range >>>>>>>>>>>>>>>>>>>>>>>>>
     % Selects alpha range (8-14 Hz)
-    freqIdx = find(erspfreqs > 8 & erspfreqs < 14);
+    freqIdx = find(erspfreqs>8 & erspfreqs<14);
     minFreq = freqIdx(1,1);
     maxFreq = freqIdx(1,end);
     % Select time > 200 secs
@@ -192,7 +229,7 @@ for i = 1:length(allGrp)
             dataAvg{i} = erspdata_NG_Left{1};
             dataIndiv{i} = mean(erspdata_NG_Left{1}(minFreq:maxFreq, minTime:maxTime), "all");
         end
-    
+
     % NG_Right
     elseif isequal(condType, condList{2})
         [STUDY erspdata_NG_Right ersptimes erspfreqs pgroup pcond pinter] = std_erspplot(STUDY,ALLEEG, ...
@@ -278,71 +315,455 @@ end
 
 %% csv prep
 
-% (Within Group Analysis) Code chunk below takes each participant's data 
-% and averaged the specific frequency band and timerange to be written in 
-% a .csv format to be analysed in R
+% (Within Group Analysis) Code chunk below takes each n participant's data 
+% and averaged the specific frequency band and timerange to be written on row n in 
+% a .csv format to be analysed in R (output = 2D [avg value x each participant)
 
 % Frequency and Time Range selection and its mean for each participant already done in erspplot for loop
 % Combines all participant's individual erspdata from dataIndiv into 1 cell array (3Dim)
 dataIndivComb = (cat(3, dataIndiv{1,:}));
 dataIndivOut = squeeze(dataIndivComb);
+dataIndivOut2 = array2table(dataIndivOut, 'RowNames', allGrp, 'VariableNames', {condChan});
 % Write to csv
-filename = ['C:\\MATLAB\\exp_1\\results\\EEG\\STUDY\\within\\' grp '_' condType '_' titleSave '.csv'];
-writematrix(dataIndivOut, filename)
+filename = ['C:\\MATLAB\\exp_1\\results\\EEG\\STUDY\\within\\within_' grp '_' condType '_' chanTitle '.csv'];
+writetable(dataIndivOut2, filename, 'WriteRowNames', 1);
 
 
 % (Between Group Analysis) Code chunk below combines all participant's data 
-% and average them. Specific time raneg and frequency band is then selected 
-% to be written in .csv format to be analysed in R
+% and average them. Specific time range and frequency band is then selected 
+% to be written in .csv format to be analysed in R (output = 2D [times x freqs])
 
 % Group Mean
 % Combines all participant's individual erspdata from dataAvg into 1 cell array (3Dim)
 dataAvgComb = cat(3, dataAvg{1,:});
-% Averaged accross participants (in each 2Dim)
+% Averaged accross participants (2Dim)
 dataAvgMean = mean(dataAvgComb, 3);
 % Filter from data mean based on above parameter (only select avg values as above)
 dataAvgOut = dataAvgMean(minFreq:maxFreq, minTime:maxTime);
 % Write to csv
-filename = ['C:\\MATLAB\\exp_1\\results\\EEG\\STUDY\\between\\' grp '_' condType '_' titleSave '.csv'];
-writematrix(dataAvgOut, filename)
+filename = ['C:\\MATLAB\\exp_1\\results\\EEG\\STUDY\\between\\between_' grp '_' condType '_' chanTitle '.csv'];
+writematrix(dataAvgOut, filename);
 
 
+%% Preview Averaged Plot
 
-% % Select specific frequency and time range
-% % Selects alpha range (8-14 Hz)
-% freqIdx = find(erspfreqs > 8 & erspfreqs < 14);
-% minFreq = freqIdx(1,1);
-% maxFreq = freqIdx(1,end);
-% % Select time > 200 secs
-% timeIdx = find(ersptimes >= 200);
-% minTime = timeIdx(1,1);
-% maxTime = timeIdx(1,end);
+dat{1,1} = dataAvgMean;
+std_plottf(ersptimes, erspfreqs, dat, 'titles', {condChan}, 'ersplim', [-3 3]);
 
-% dataOut = dataMean(3:5,93:200);
+%% Rerun all C
+
+% A) Choose: C / MA / MO
+grp = 'C'; 
+% B) Group
+allGrp = allC;
+% C) Conditions
+condType = condList{1};
+% D) Channel Group
+chans = rightOcc;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = leftPar;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = rightPar;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+% A) Choose: C / MA / MO
+grp = 'C'; 
+% B) Group
+allGrp = allC;
+% C) Conditions
+condType = condList{2};
+% D) Channel Group
+chans = leftOcc;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = rightOcc;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = leftPar;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = rightPar;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+% A) Choose: C / MA / MO
+grp = 'C'; 
+% B) Group
+allGrp = allC;
+% C) Conditions
+condType = condList{3};
+% D) Channel Group
+chans = leftOcc;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = rightOcc;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = leftPar;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = rightPar;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
 
 
-%% Write csv
+% A) Choose: C / MA / MO
+grp = 'C'; 
+% B) Group
+allGrp = allC;
+% C) Conditions
+condType = condList{4};
+% D) Channel Group
+chans = leftOcc;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
 
+chans = rightOcc;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = leftPar;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = rightPar;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+% A) Choose: C / MA / MO
+grp = 'C'; 
+% B) Group
+allGrp = allC;
+% C) Conditions
+condType = condList{5};
+% D) Channel Group
+chans = leftOcc;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = rightOcc;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = leftPar;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = rightPar;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+% A) Choose: C / MA / MO
+grp = 'C'; 
+% B) Group
+allGrp = allC;
+% C) Conditions
+condType = condList{6};
+% D) Channel Group
+chans = leftOcc;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = rightOcc;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = leftPar;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+chans = rightPar;
+clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+rerun_5;
+
+% %% Run all MA
+% % A) Choose: C / MA / MO
+% grp = 'MA'; 
+% % B) Group
+% allGrp = allMA;
+% % C) Conditions
+% condType = condList{1};
+% % D) Channel Group
+% chans = leftOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
 % 
+% chans = rightOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
 % 
-% pop_savestudy(STUDY, EEG, 'filename', 'twoPerGroup', ...
-%                           'filepath', 'C:\\MATLAB\\exp_1\\results\\EEG\\');
+% chans = leftPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% % A) Choose: C / MA / MO
+% grp = 'MA'; 
+% % B) Group
+% allGrp = allMA;
+% % C) Conditions
+% condType = condList{2};
+% % D) Channel Group
+% chans = leftOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = leftPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% % A) Choose: C / MA / MO
+% grp = 'MA'; 
+% % B) Group
+% allGrp = allMA;
+% % C) Conditions
+% condType = condList{3};
+% % D) Channel Group
+% chans = leftOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = leftPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% % A) Choose: C / MA / MO
+% grp = 'MA'; 
+% % B) Group
+% allGrp = allMA;
+% % C) Conditions
+% condType = condList{4};
+% % D) Channel Group
+% chans = leftOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = leftPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% % A) Choose: C / MA / MO
+% grp = 'MA'; 
+% % B) Group
+% allGrp = allMA;
+% % C) Conditions
+% condType = condList{5};
+% % D) Channel Group
+% chans = leftOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = leftPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% % A) Choose: C / MA / MO
+% grp = 'MA'; 
+% % B) Group
+% allGrp = allMA;
+% % C) Conditions
+% condType = condList{6};
+% % D) Channel Group
+% chans = leftOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = leftPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+% %% Run all MO
+% % A) Choose: C / MA / MO
+% grp = 'MO'; 
+% % B) Group
+% allGrp = allMO;
+% % C) Conditions
+% condType = condList{1};
+% % D) Channel Group
+% chans = leftOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = leftPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% % A) Choose: C / MA / MO
+% grp = 'MO'; 
+% % B) Group
+% allGrp = allMO;
+% % C) Conditions
+% condType = condList{2};
+% % D) Channel Group
+% chans = leftOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = leftPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% % A) Choose: C / MA / MO
+% grp = 'MO'; 
+% % B) Group
+% allGrp = allMO;
+% % C) Conditions
+% condType = condList{3};
+% % D) Channel Group
+% chans = leftOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = leftPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% % A) Choose: C / MA / MO
+% grp = 'MO'; 
+% % B) Group
+% allGrp = allMO;
+% % C) Conditions
+% condType = condList{4};
+% % D) Channel Group
+% chans = leftOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = leftPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% % A) Choose: C / MA / MO
+% grp = 'MO'; 
+% % B) Group
+% allGrp = allMO;
+% % C) Conditions
+% condType = condList{5};
+% % D) Channel Group
+% chans = leftOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = leftPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% % A) Choose: C / MA / MO
+% grp = 'MO'; 
+% % B) Group
+% allGrp = allMO;
+% % C) Conditions
+% condType = condList{6};
+% % D) Channel Group
+% chans = leftOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightOcc;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = leftPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
+% 
+% chans = rightPar;
+% clear dat dataAvg dataAvgComb dataAvgMean dataAvgOut dataIndiv dataIndivComb dataIndivOut dataIndivOut2;
+% rerun_5;
 
 
 
