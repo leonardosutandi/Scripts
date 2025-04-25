@@ -1,0 +1,492 @@
+---
+title: "BEH2_merge"
+author: "Leonardo Sutandi"
+date: "2025-03-13"
+output: html_document
+---
+
+## R Setup
+```{r setup, include=T}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# A) Reaction Time
+This script merge preprocessed individual data set. Outputs are: mergedC (all controls), mergedMA (all MA), 
+mergedMO (all MO), and allGroups (all groups combine). Outputs with _OL are per group outlier removed output.
+```{r}
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# Reaction Time >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+# # Clear environment
+# rm(list = ls())
+# # loading filepath
+# filepath_in <- "C:/R/exp_1/results/BEH/indv_merge_dataset/"
+# # Saving filepath
+# filepath_out <- "C:/R/exp_1/results/BEH/merged_group_dataset/"
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# Accuracy >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#
+# Clear environment
+rm(list = ls())
+# loading filepath
+filepath_in <- "C:/R/exp_1/results/BEH/indv_merge_dataset_acc/"
+# Saving filepath
+filepath_out <- "C:/R/exp_1/results/BEH/merged_group_dataset_acc/"
+```
+
+
+## 1) C Read Dataset
+```{r, message=FALSE, warning=FALSE}
+
+# Read all C participants
+C_4 <- read_csv(paste0(filepath_in, "C_4.csv"))
+C_5 <- read_csv(paste0(filepath_in, "C_5.csv"))
+C_6 <- read_csv(paste0(filepath_in, "C_6.csv"))
+C_8 <- read_csv(paste0(filepath_in, "C_8.csv"))
+C_12 <- read_csv(paste0(filepath_in, "C_12.csv"))
+C_13 <- read_csv(paste0(filepath_in, "C_13.csv"))
+C_14 <- read_csv(paste0(filepath_in, "C_14.csv"))
+C_15 <- read_csv(paste0(filepath_in, "C_15.csv"))
+# C_16 <- read_csv(paste0(filepath_in, "C_16.csv"))
+# C_18 <- read_csv(paste0(filepath_in, "C_18.csv"))
+C_19 <- read_csv(paste0(filepath_in, "C_19.csv"))
+C_22 <- read_csv(paste0(filepath_in, "C_22.csv"))
+C_25 <- read_csv(paste0(filepath_in, "C_25.csv"))
+# C_26 <- read_csv(paste0(filepath_in, "C_26.csv"))
+# C_28 <- read_csv(paste0(filepath_in, "C_28.csv"))
+C_29 <- read_csv(paste0(filepath_in, "C_29.csv"))
+C_31 <- read_csv(paste0(filepath_in, "C_31.csv"))
+C_36 <- read_csv(paste0(filepath_in, "C_36.csv"))
+C_37 <- read_csv(paste0(filepath_in, "C_37.csv")) #15 stops here
+C_38 <- read_csv(paste0(filepath_in, "C_38.csv"))
+C_40 <- read_csv(paste0(filepath_in, "C_40.csv"))
+# C_41 <- read_csv(paste0(filepath_in, "C_41.csv")) 
+
+# Merge all controls
+mergedC <- 
+  full_join(C_4, C_5) |>
+  full_join(C_6) |>
+  full_join(C_8) |>
+  full_join(C_12) |>
+  full_join(C_13) |>
+  full_join(C_14) |>
+  full_join(C_15) |>
+  # full_join(C_16) |>
+  # full_join(C_18) |>
+  full_join(C_19) |>
+  full_join(C_22) |>
+  full_join(C_25) |>
+  # full_join(C_26) |>
+  # full_join(C_28) |>
+  full_join(C_29) |>
+  full_join(C_31) |>
+  full_join(C_36) |> 
+  full_join(C_37) |> 
+  full_join(C_38) |> 
+  full_join(C_40)
+
+# Save C merged dataset
+write_csv(mergedC, paste0(filepath_out, "mergedC.csv"))
+```
+
+# 2) Control Outlier Removal
+```{r}
+# # IQR
+# mergedC_OL <- mergedC|>
+#   rstatix::identify_outliers(rtDet)
+# # List every rtDet classified as outlier (is.outlier vs is.extreme)
+# outlierListC <- c(mergedC_OL$rtDet[mergedC_OL$is.outlier == TRUE])
+# # Remove rows with outlier based on above
+# mergedC_OL <- mergedC|>
+#   filter(!rtDet %in% outlierListC[])
+# 
+# write_csv(mergedC_OL, paste0(filepath_out, "mergedC_OL.csv"))
+```
+
+## 3) MA Read Dataset
+```{r, message=FALSE, warning=FALSE}
+# Read all MA participants
+MA_7 <- read_csv(paste0(filepath_in, "MA_7.csv"))
+MA_9 <- read_csv(paste0(filepath_in, "MA_9.csv"))
+MA_11 <- read_csv(paste0(filepath_in, "MA_11.csv"))
+MA_20 <- read_csv(paste0(filepath_in, "MA_20.csv"))
+MA_21 <- read_csv(paste0(filepath_in, "MA_21.csv"))
+MA_24 <- read_csv(paste0(filepath_in, "MA_24.csv"))
+MA_27 <- read_csv(paste0(filepath_in, "MA_27.csv"))
+MA_30 <- read_csv(paste0(filepath_in, "MA_30.csv"))
+MA_33 <- read_csv(paste0(filepath_in, "MA_33.csv"))
+MA_34 <- read_csv(paste0(filepath_in, "MA_34.csv"))
+MA_35 <- read_csv(paste0(filepath_in, "MA_35.csv"))
+MA_39 <- read_csv(paste0(filepath_in, "MA_39.csv"))
+
+# Merge to 1 dataset
+mergedMA <- 
+  full_join(MA_7, MA_9) |>
+  full_join(MA_11) |>
+  full_join(MA_20) |>
+  full_join(MA_21) |>
+  full_join(MA_24) |>
+  full_join(MA_27) |>
+  full_join(MA_30) |>
+  full_join(MA_33) |>
+  full_join(MA_34) |>
+  full_join(MA_35) |> 
+  full_join(MA_39)
+
+# Save MA merged dataset
+write_csv(mergedMA, paste0(filepath_out, "mergedMA.csv"))
+```
+
+# 4) MA Outlier Removal
+```{r}
+# # IQR
+# mergedMA_OL <- mergedMA|>
+#   rstatix::identify_outliers(rtDet)
+# # List every rtDet classified as outlier (is.outlier vs is.extreme)
+# outlierListMA <- c(mergedMA_OL$rtDet[mergedMA_OL$is.outlier == TRUE])
+# # Remove rows with outlier based on above
+# mergedMA_OL <- mergedMA|>
+#   filter(!rtDet %in% outlierListMA[])
+# 
+# write_csv(mergedMA_OL, paste0(filepath_out, "mergedMA_OL.csv"))
+```
+
+# 5) MO Read Data Set
+```{r, message=FALSE, warning=FALSE}
+# Read all MO participants
+MO_2 <- read_csv(paste0(filepath_in, "MO_2.csv"))
+MO_3 <- read_csv(paste0(filepath_in, "MO_3.csv"))
+MO_10 <- read_csv(paste0(filepath_in, "MO_10.csv"))
+MO_17 <- read_csv(paste0(filepath_in, "MO_17.csv"))
+MO_32 <- read_csv(paste0(filepath_in, "MO_32.csv"))
+
+# Merge to 1 dataset
+mergedMO <- full_join(MO_2, MO_3) |> 
+            full_join(MO_10) |>
+            full_join(MO_17) |>
+            full_join(MO_32)
+
+# Save MA merged dataset
+write_csv(mergedMO, paste0(filepath_out, "mergedMO.csv"))
+```
+
+# 6) MO Outlier Removal
+```{r}
+# # IQR
+# mergedMO_OL <- mergedMO|>
+#   rstatix::identify_outliers(rtDet)
+# # List every rtDet classified as outlier (is.outlier vs is.extreme)
+# outlierListMO <- c(mergedMO_OL$rtDet[mergedMO_OL$is.outlier == TRUE])
+# # Remove rows with outlier based on above
+# mergedMO_OL <- mergedMO|>
+#   filter(!rtDet %in% outlierListMO[])
+# 
+# write_csv(mergedMO_OL, paste0(filepath_out, "mergedMO_OL.csv"))
+```
+
+# 7) Merge Migraines (Optional)
+```{r, message=FALSE, warning=FALSE}
+
+mergedM <- full_join(mergedMO, mergedMA) |> 
+  mutate(group = recode(group, "MO" = "M",
+                               "MA" = "M"))
+
+write.csv(mergedM, paste0(filepath_out, "mergedM.csv"))
+```
+
+# 8a) Combine all datasets
+```{r, message=FALSE, warning=FALSE}
+
+allGroups <- full_join(mergedC, mergedM)
+
+write.csv(allGroups, paste0(filepath_out, "allGroups.csv"))
+```
+
+# 8b) ONLY ACCURACY DATA
+```{r}
+if (filepath_in == "C:/R/exp_1/results/BEH/indv_merge_dataset_acc/") {
+allGroups <-
+  allGroups |>
+  pivot_longer(cols = 3:14,
+               names_to = c("trialType", "validity"),
+               names_sep = "_",
+               values_to = "percentage")
+
+write.csv(allGroups, paste0(filepath_out, "allGroups.csv"))
+}
+```
+
+# 9) Combine all OL datasets
+```{r, message=FALSE, warning=FALSE}
+# mergedM_OL <- full_join(mergedMO_OL, mergedMA_OL) |> 
+#   mutate(group = recode(group, "MO" = "M",
+#                                "MA" = "M"))
+# write.csv(mergedM_OL, paste0(filepath_out, "mergedM_OL.csv"))
+# 
+# allGroups_OL <- full_join(mergedC_OL, mergedM_OL)
+# write.csv(allGroups_OL, paste0(filepath_out, "allGroups_OL.csv"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+
+# B) Accuracy
+This script merge preprocessed individual data set. Outputs are: mergedC (all controls), mergedMA (all MA), 
+mergedMO (all MO), and allGroups (all groups combine). Outputs with _OL are per group outlier removed output.
+```{r}
+# Clear environment
+rm(list = ls())
+# loading filepath
+filepath_in <- "C:/R/exp_1/results/BEH/indv_merge_dataset_acc/"
+# Saving filepath
+filepath_out <- "C:/R/exp_1/results/BEH/merged_group_dataset_acc/"
+```
+
+
+## 1) C Read Dataset
+```{r, message=FALSE, warning=FALSE}
+
+# Read all C participants
+C_4 <- read_csv(paste0(filepath_in, "C_4.csv"))
+C_5 <- read_csv(paste0(filepath_in, "C_5.csv"))
+C_6 <- read_csv(paste0(filepath_in, "C_6.csv"))
+C_8 <- read_csv(paste0(filepath_in, "C_8.csv"))
+C_12 <- read_csv(paste0(filepath_in, "C_12.csv"))
+C_13 <- read_csv(paste0(filepath_in, "C_13.csv"))
+C_14 <- read_csv(paste0(filepath_in, "C_14.csv"))
+C_15 <- read_csv(paste0(filepath_in, "C_15.csv"))
+# C_16 <- read_csv(paste0(filepath_in, "C_16.csv"))
+# C_18 <- read_csv(paste0(filepath_in, "C_18.csv"))
+C_19 <- read_csv(paste0(filepath_in, "C_19.csv"))
+C_22 <- read_csv(paste0(filepath_in, "C_22.csv"))
+C_25 <- read_csv(paste0(filepath_in, "C_25.csv"))
+# C_26 <- read_csv(paste0(filepath_in, "C_26.csv"))
+# C_28 <- read_csv(paste0(filepath_in, "C_28.csv"))
+C_29 <- read_csv(paste0(filepath_in, "C_29.csv"))
+C_31 <- read_csv(paste0(filepath_in, "C_31.csv"))
+C_36 <- read_csv(paste0(filepath_in, "C_36.csv"))
+C_37 <- read_csv(paste0(filepath_in, "C_37.csv")) #15 stops here
+# C_38 <- read_csv(paste0(filepath_in, "C_38.csv"))
+# C_40 <- read_csv(paste0(filepath_in, "C_40.csv")) 
+# C_41 <- read_csv(paste0(filepath_in, "C_41.csv")) 
+
+# Merge all controls
+mergedC <-
+  full_join(C_4, C_5) |>
+  full_join(C_6) |>
+  full_join(C_8) |>
+  full_join(C_12) |>
+  full_join(C_13) |>
+  full_join(C_14) |>
+  full_join(C_15) |>
+  # full_join(C_16) |>
+  # full_join(C_18) |>
+  full_join(C_19) |>
+  full_join(C_22) |>
+  full_join(C_25) |>
+  # full_join(C_26) |>
+  # full_join(C_28) |>
+  full_join(C_29) |>
+  full_join(C_31) |>
+  full_join(C_36) |>
+  full_join(C_37)
+
+mergedC <- 
+  mergedC |> 
+  pivot_longer(cols = 3:14,
+               names_to = c("trialType", "validity"),
+               names_sep = "_",
+               values_to = "percentage")
+
+# Save C merged dataset
+write_csv(mergedC, paste0(filepath_out, "mergedC.csv"))
+
+# # OPTIONAL
+# mergedC_OL <- 
+#   mergedC |> 
+#   filter(!rtDet %in% outlierListC[]) |> 
+#   pivot_longer(cols = 3:14,
+#                names_to = c("trialType", "validity"),
+#                names_sep = "_",
+#                values_to = "percentage")
+# 
+# # Save C merged dataset
+# write_csv(mergedC_OL, paste0(filepath_out, "mergedC_OL.csv"))
+```
+
+## 3) MA Read Dataset
+```{r, message=FALSE, warning=FALSE}
+# # Read all MA participants
+# MA_7 <- read_csv(paste0(filepath_in, "MA_7.csv"))
+# MA_9 <- read_csv(paste0(filepath_in, "MA_9.csv"))
+# MA_11 <- read_csv(paste0(filepath_in, "MA_11.csv"))
+MA_20 <- read_csv(paste0(filepath_in, "MA_20.csv"))
+# MA_21 <- read_csv(paste0(filepath_in, "MA_21.csv"))
+# MA_24 <- read_csv(paste0(filepath_in, "MA_24.csv"))
+# MA_27 <- read_csv(paste0(filepath_in, "MA_27.csv"))
+# MA_30 <- read_csv(paste0(filepath_in, "MA_30.csv"))
+# MA_33 <- read_csv(paste0(filepath_in, "MA_33.csv"))
+# MA_34 <- read_csv(paste0(filepath_in, "MA_34.csv"))
+# MA_35 <- read_csv(paste0(filepath_in, "MA_35.csv"))
+# MA_39 <- read_csv(paste0(filepath_in, "MA_39.csv"))
+mergedMA<-MA_20
+# # Merge to 1 dataset
+# mergedMA <- full_join(MA_7, MA_9) |>
+#             full_join(MA_11) |>
+#             full_join(MA_20) |>
+#             full_join(MA_21) |>
+#             full_join(MA_24) |>
+#             full_join(MA_27) |>
+#             full_join(MA_30) |>
+#             full_join(MA_33) |>
+#             full_join(MA_34) |>
+#             full_join(MA_35)
+
+mergedMA <- 
+  mergedMA |> 
+  pivot_longer(cols = 3:14,
+               names_to = c("trialType", "validity"),
+               names_sep = "_",
+               values_to = "percentage")
+
+# Save C merged dataset
+write_csv(mergedMA, paste0(filepath_out, "mergedMA.csv"))
+
+# # OPTIONAL
+# mergedMA_OL <- 
+#   mergedMA |> 
+#   filter(!rtDet %in% outlierListMA[]) |> 
+#   pivot_longer(cols = 3:14,
+#                names_to = c("trialType", "validity"),
+#                names_sep = "_",
+#                values_to = "percentage")
+# 
+# # Save C merged dataset
+# write_csv(mergedMA_OL, paste0(filepath_out, "mergedMA_OL.csv"))
+```
+
+# 5) MO Read Data Set
+```{r, message=FALSE, warning=FALSE}
+# MO_2 <- read_csv(paste0(filepath_in, "MO_2.csv"))
+# MO_3 <- read_csv(paste0(filepath_in, "MO_3.csv"))
+MO_10 <- read_csv(paste0(filepath_in, "MO_10.csv"))
+# MO_17 <- read_csv(paste0(filepath_in, "MO_17.csv"))
+# MO_32 <- read_csv(paste0(filepath_in, "MO_32.csv"))
+mergedMO<-MO_10
+# # Merge to 1 dataset
+# mergedMO <- full_join(MO_2, MO_3) |> 
+#             full_join(MO_10) |>
+#             full_join(MO_17) |>
+#             full_join(MO_32)
+
+mergedMO <- 
+  mergedMO |> 
+  pivot_longer(cols = 3:14,
+               names_to = c("trialType", "validity"),
+               names_sep = "_",
+               values_to = "percentage")
+
+# Save C merged dataset
+write_csv(mergedMO, paste0(filepath_out, "mergedMO.csv"))
+
+# # OPTIONAL
+# mergedMO_OL <-
+#   mergedMO |> 
+#   filter(!rtDet %in% outlierListMO[]) |> 
+#   pivot_longer(cols = 3:14,
+#                names_to = c("trialType", "validity"),
+#                names_sep = "_",
+#                values_to = "percentage")
+# 
+# # Save C merged dataset
+# write_csv(mergedMO_OL, paste0(filepath_out, "mergedMO_OL.csv"))
+```
+
+# 7) Merge Migraines (Optional)
+```{r, message=FALSE, warning=FALSE}
+mergedM <- full_join(mergedMO, mergedMA) |> 
+  mutate(group = recode(group, "MO" = "M",
+                               "MA" = "M"))
+write.csv(mergedM, paste0(filepath_out, "mergedM.csv"))
+```
+
+# 8) Combine all datasets
+```{r, message=FALSE, warning=FALSE}
+allGroups <- full_join(mergedC, mergedM)
+write.csv(allGroups, paste0(filepath_out, "allGroups.csv"))
+```
+
+# 9) ONLY ACCURACY DATA
+```{r}
+
+```
+
+# 9) Combine all OL datasets
+```{r, message=FALSE, warning=FALSE}
+# mergedM_OL <- full_join(mergedMO_OL, mergedMA_OL) |> 
+#   mutate(group = recode(group, "MO" = "M",
+#                                "MA" = "M"))
+# write.csv(mergedM_OL, paste0(filepath_out, "mergedM_OL.csv"))
+# 
+# allGroups_OL <- full_join(mergedC_OL, mergedM_OL)
+# write.csv(allGroups_OL, paste0(filepath_out, "allGroups_OL.csv"))
+```
+
+
+
+
+
+
+
+
+
+

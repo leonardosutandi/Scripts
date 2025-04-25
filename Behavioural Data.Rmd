@@ -1,0 +1,1112 @@
+---
+title: "Behavioural Data"
+author: "Leonardo Sutandi"
+date: "2025-04-03"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Stats
+library(lme4)
+library(ggResidpanel) #https://goodekat.github.io/ggResidpanel/articles/introduction.html
+library(rstatix)
+# Plotting
+library(cowplot)
+# library(flextable)
+library(patchwork)
+# Table Format
+library(kableExtra)
+library(gtsummary)
+# Main
+library(tidyverse)
+```
+
+
+# Part 1: Reaction Time >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+```{r, include=F, message=FALSE, warning=FALSE, echo=F}
+
+filepath <- "C:/R/exp_1/results/BEH/merged_group_dataset/"
+
+mergedC <- read_csv(paste0(filepath, "mergedC.csv"))
+mergedMA <- read_csv(paste0(filepath, "mergedMA.csv"))
+mergedMO <- read_csv(paste0(filepath, "mergedMO.csv"))
+mergedM <- read_csv(paste0(filepath, "mergedM.csv"))
+allGroups <- read_csv(paste0(filepath, "allGroups.csv"))
+
+# allGroups$id <- as.factor(allGroups$id)
+# allGroups$group <- as.factor(allGroups$group)
+# # allGroups$fixJitData <- as.factor(allGroups$fixJitData)
+# allGroups$trialType <- as.factor(allGroups$trialType)
+# allGroups$validity <- as.factor(allGroups$validity)
+# # allGroups$id <- as.factor(allGroups$cuePos)
+# # allGroups$targetLR <- as.factor(allGroups$targetLR)
+# allGroups$correctDet <- as.factor(allGroups$correctDet)
+```
+
+## Control
+```{r, message=FALSE, warning=FALSE, fig.title="title", echo=F}
+
+data <- 
+  mergedC |> 
+  filter(trialType == "NG",  # Only want NoGrat
+         correctDet == "correct") # Only want correct response
+
+# Set plot contents
+noGratRt_C <- 
+  ggplot(data, aes(validity, rtDet, fill = validity)) + 
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar', 
+               width = 0.3, 
+               coef = 1.5) +
+  # Set plot design
+  geom_jitter(aes(color = validity), #aes(col = id),
+              width = 0.3, 
+              alpha = 0.05) +
+  # scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color = FALSE) +
+  geom_boxplot(width = 0.5,
+               alpha = 1,
+               outlier.shape = NaN) +
+  
+  # Set mean
+  stat_summary(fun.y = mean, 
+               geom = "line",
+               aes(group = 1),
+               size = 0.8,
+               colour = "gray50",
+               show.legend = F) +  
+  stat_summary(fun = mean,
+               geom = "point",
+               shape = 16,
+               size = 1.5,
+               colour = "black",
+               show.legend = F)  +
+  # Set major labels (title, Y, X axis)
+  labs(title = "No Gratings",
+       x = " ",
+       y = "RT (Secs)") +
+  # Rename each X axis character label
+  scale_x_discrete(limits = c("invalid", "neutral", "valid"),
+                   labels = c("Invalid", "Neutral", "Valid")) +
+  # Set Y axis range
+  ylim(0, 2) +
+  # Set colour
+  scale_fill_manual(values=c("coral", "seagreen1", "cadetblue1")) +
+  # scale_fill_manual(values=c("gray", "gray", "gray")) +
+  # Plot theme
+  theme_bw() +
+  # Remove legend
+  guides(fill=FALSE)
+
+
+# Gratings
+data <- 
+  mergedC |> 
+  filter(trialType == "G",
+         correctDet == "correct")
+
+# Set plot contents
+gratRt_C <- 
+  ggplot(data, 
+         aes(validity, rtDet, fill = validity))  + 
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar', 
+               width = 0.3) +
+  # Set plot design
+  geom_jitter(aes(color=validity), 
+              width = 0.3, 
+              alpha = 0.05) +
+  scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color=FALSE) +
+  geom_boxplot(width = 0.5,
+               alpha = 1, 
+               outlier.shape = NaN) +
+  # Set mean
+  stat_summary(fun.y = mean, 
+               geom = "line",
+               aes(group = 1),
+               size = 0.8,
+               colour = "gray50",
+               show.legend = F) +  
+  stat_summary(fun = mean,
+               geom = "point",
+               shape = 16,
+               size = 1.5,
+               colour = "black",
+               show.legend = F)  +
+  # Set major labels (title, Y, X axis)
+  labs(title = "Gratings",
+       x = "",
+       y = "RT (Secs)") +
+  # Rename each X axis character label
+  scale_x_discrete(limits = c("invalid", "neutral", "valid"),
+                   labels = c("Invalid", "Neutral", "Valid")) +
+  # Set Y axis range
+  ylim(0, 2) +
+  # Set colour
+  scale_fill_manual(values=c("coral", "seagreen1", "cadetblue1")) +
+  # Plot theme
+  theme_bw() +
+  # Remove legend
+  guides(fill=FALSE)
+
+# mergedC_plot <- plot_grid(noGratRt_C, gratRt_C, labels = c("A", "B"), ncol = 2, nrow = 1)
+# title <- ggdraw() + 
+#   draw_label(
+#     "All Control - RT Correct Detection",
+#     fontface = 'bold',
+#     x = 0,
+#     hjust = 0) +
+#   theme(plot.margin = margin(0, 0, 0, 3))
+# mergedC_plot <- plot_grid(title, mergedC_plot, ncol = 1, nrow = 2, rel_heights = c(0.05, 1))
+# ggsave("C:/MATLAB/exp_1/results/figures/mergedC_plot.jpg", mergedC_plot, height = 5)
+# print(mergedC_plot)
+
+mergedC_plot <- noGratRt_C + gratRt_C + 
+  plot_annotation(title = "RT Correct Detection - Control")
+ggsave("C:/MATLAB/exp_1/results/figures/mergedC_plot.jpg", mergedC_plot, height = 5)
+print(mergedC_plot)
+
+```
+
+## Descriptives
+```{r, echo=F}
+mergedC |> filter(correctDet == "correct")|>
+  group_by(validity, trialType, group) |>
+  rstatix::get_summary_stats(rtDet, type = "mean_sd")
+```
+
+## Migraine
+```{r, message=FALSE, warning=FALSE, echo=F}
+
+data <- 
+  mergedM |> 
+  filter(trialType == "NG",  # Only want NoGrat
+         correctDet == "correct") # Only want correct response
+
+# Set plot contents
+noGratRt_M <- 
+  ggplot(data, aes(validity, rtDet, fill = validity)) + 
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar', 
+               width = 0.3, 
+               coef = 1.5) +
+  # Set plot design
+  geom_jitter(aes(colour = validity),
+              width = 0.3, 
+              alpha = 0.05) +
+  scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color = FALSE) +
+  geom_boxplot(width = 0.5,
+               alpha = 1,
+               outlier.shape = NaN) +
+  
+  # Set mean
+  stat_summary(fun.y = mean, 
+               geom = "line",
+               aes(group = 1),
+               size = 0.8,
+               colour = "gray50",
+               show.legend = F) +  
+  stat_summary(fun = mean,
+               geom = "point",
+               shape = 16,
+               size = 1.5,
+               colour = "black",
+               show.legend = F)  +
+  # Set major labels (title, Y, X axis)
+  labs(title = "No Gratings",
+       x = "",
+       y = "RT (Secs)") +
+  # Rename each X axis character label
+  scale_x_discrete(limits = c("invalid", "neutral", "valid"),
+                   labels = c("Invalid", "Neutral", "Valid")) +
+  # Set Y axis range
+  ylim(0, 2) +
+  # Set colour
+  scale_fill_manual(values=c("coral", "seagreen1", "cadetblue1")) +
+  # Plot theme
+  theme_bw() +
+  # Remove legend
+  guides(fill=FALSE)
+
+# Gratings
+data <- 
+  mergedM |> 
+  filter(trialType == "G",  # Only want NoGrat
+         correctDet == "correct") # Only want correct response
+
+# Set plot contents
+gratRt_M <- 
+  ggplot(data, aes(validity, rtDet, fill = validity)) + 
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar', 
+               width = 0.3, 
+               coef = 1.5) +
+  # Set plot design
+  geom_jitter(aes(colour = validity),
+              width = 0.3, 
+              alpha = 0.05) +
+  scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color = FALSE) +
+  geom_boxplot(width = 0.5,
+               alpha = 1,
+               outlier.shape = NaN) +
+  
+  # Set mean
+  stat_summary(fun.y = mean, 
+               geom = "line",
+               aes(group = 1),
+               size = 0.8,
+               colour = "gray50",
+               show.legend = F) +  
+  stat_summary(fun = mean,
+               geom = "point",
+               shape = 16,
+               size = 1.5,
+               colour = "black",
+               show.legend = F)  +
+  # Set major labels (title, Y, X axis)
+  labs(title = "Gratings",
+       x = "",
+       y = "RT (Secs)") +
+  # Rename each X axis character label
+  scale_x_discrete(limits = c("invalid", "neutral", "valid"),
+                   labels = c("Invalid", "Neutral", "Valid")) +
+  # Set Y axis range
+  ylim(0, 2) +
+  # Set colour
+  scale_fill_manual(values=c("coral", "seagreen1", "cadetblue1")) +
+  # Plot theme
+  theme_bw() +
+  # Remove legend
+  guides(fill=FALSE)
+
+
+# mergedMA_plot <- plot_grid(noGratRt_MA, gratRt_MA, labels=c("A", "B"), ncol = 2, nrow = 1)
+# title <- ggdraw() + 
+#   draw_label(
+#     "All Migraine - RT Correct Detection",
+#     fontface = 'bold',
+#     x = 0,
+#     hjust = 0) +
+#   theme(plot.margin = margin(0, 0, 0, 3))
+# mergedMA_plot <- plot_grid(title, mergedMA_plot, ncol = 1, nrow = 2, rel_heights = c(0.05, 1))
+# ggsave("C:/MATLAB/exp_1/results/figures/mergedMA_plot.png", mergedMA_plot, height = 5)
+# print(mergedMA_plot)
+
+mergedM_plot <- noGratRt_M + gratRt_M + 
+  plot_annotation(title = "RT Correct Detection - All Migraine")
+ggsave("C:/MATLAB/exp_1/results/figures/mergedM_plot.jpg", mergedM_plot, height = 5)
+print(mergedM_plot)
+
+```
+
+## Descriptives
+```{r, echo=F}
+mergedM |> filter(correctDet == "correct")|>
+  group_by(validity, trialType, group) |>
+  rstatix::get_summary_stats(rtDet, type = "mean_sd")
+```
+
+## Control vs Migraine
+```{r, message=F, warning=F, echo=F}
+# gratComp <- plot_grid(noGratRt_C, noGratRt_MA, gratRt_C, gratRt_MA, labels=c("NG_C", "NG_M", "G_C", "G_M"), ncol = 2, nrow = 1)
+# title <- ggdraw() + 
+#   draw_label(
+#     "Trial Comparison Between Groups",
+#     fontface = 'bold',
+#     x = 0,
+#     hjust = 0) +
+#   theme(plot.margin = margin(0, 0, 0, 3))
+# gratComp <- plot_grid(title, gratComp, ncol = 1, nrow = 2, rel_heights = c(0.05, 1))
+# ggsave("C:/MATLAB/exp_1/results/figures/mergedMA_plot.png", mergedMA_plot, height = 5)
+# print(gratComp)
+
+# ggarrange(noGratRt_C, noGratRt_MA, gratRt_C, gratRt_MA, labels=c("NG_C", "NG_M", "G_C", "G_M"), ncol = 2, nrow = 2)
+
+NG_comp <- noGratRt_C + noGratRt_M +
+  plot_annotation(title = "No Gratings RT Correct Detection -  Control (Left) vs Migraine (Right)")
+G_comp <- gratRt_C + gratRt_M +
+  plot_annotation(title = "Gratings RT Correct Detection -  Control (Left) vs Migraine (Right)")
+
+print(NG_comp)
+print(G_comp)
+
+```
+
+
+# Statistics Descriptives
+```{r}
+# working data
+data <- allGroups
+
+# Descriptives
+data |>
+  group_by(validity, trialType, group) |>
+  rstatix::get_summary_stats(rtDet, type = "mean_sd")
+```
+
+## Data Configuration
+```{r}
+data <- 
+  data |>
+  mutate(group = recode(group, "MA" = "M", # mix migraine groups
+                            "MO" = "M"),
+         Acc = recode(correctAcc, "correct"=0, "incorrect"=1))  |> 
+  # select(id, group, trialType, validity, correctDet, rtDet) |>
+  filter(correctDet == "correct", rtDet >0.2)
+
+data$id <- as.factor(data$id)
+data$group <- as.factor(data$group)
+# data$fixJitData <- as.factor(data$fixJitData)
+data$trialType <- as.factor(data$trialType)
+data$validity <- as.factor(data$validity)
+```
+
+## Full GLMM (Gamma - link: Log) Model
+```{r}
+rt_model <- 
+  glmer(rtDet ~ trialType * validity * group + (1|id),
+        data = data,
+        family = Gamma(link = "log"))
+
+summary(rt_model)
+# tbl_regression(rt_model,
+#                intercept = T,
+#                pvalue_fun = label_style_pvalue(digits =2)) |> 
+#   # add_global_p() |> 
+#   bold_p(t = 0.05) |> 
+#   bold_labels() |> 
+#   italicize_levels()
+
+resid_panel(rt_model, smoother = TRUE, qqbands = TRUE)
+```
+
+## Reduced GLMM (Gamma - link: Log) Model (w/o Group Factor)
+```{r}
+# Reduced Model w/o Group Factor
+rt_model_reduced1 <- 
+  glmer(rtDet ~ trialType * validity + (1|id),
+        data = data,
+        family = Gamma(link = "log"))
+summary(rt_model_reduced1)
+resid_panel(rt_model_reduced1, smoother = TRUE, qqbands = TRUE)
+
+```
+
+## Model Comparison
+```{r}
+
+# Does group significantly affect RT?
+anovaRt <- 
+  anova(rt_model_reduced1, rt_model)  |> 
+  mutate(model = c("Reduced Model", "Full Model"), .before = 1)
+  
+#rt_table <- 
+  anovaRt |>
+  kbl() |>
+  kable_classic(full_width = F,
+                html_font = "Cambria")
+
+
+  tbl_summary(anovaRt,
+            include = c("AIC", "BIC", "Chisq", "Df", "Pr(>Chisq)"), 
+            by = "model")
+
+```
+
+```{r}
+# Full Model
+mod1 <-
+tbl_regression(rt_model,
+               intercept = T,
+               pvalue_fun = label_style_pvalue(digits =2)) |> 
+  # add_global_p() |> 
+  bold_p(t = 0.05) |> 
+  bold_labels() |> 
+  italicize_levels()
+# Reduced Model
+mod2 <-
+  tbl_regression(rt_model_reduced1,
+               intercept = T,
+               pvalue_fun = label_style_pvalue(digits =2)) |> 
+  # add_global_p() |> 
+  bold_p(t = 0.05) |> 
+  bold_labels() |> 
+  italicize_levels()
+# Merge Model
+tbl_merge(tbls = list(mod1, mod2),
+          tab_spanner = c("**Full Model**", "**Reduced Model**")) |> 
+  as_gt() |> 
+  gt::gtsave(filename = "rt_stats.png",
+             path = "C:/MATLAB/exp_1/results/figures")
+
+```
+
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+_______________________________________________________________________________________________________________________
+
+# Part 2: Accuracy >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+```{r, warning=F, message=F, echo=F}
+# Accuracy needs percentage allGroups
+filepath2 <- "C:/R/exp_1/results/BEH/merged_group_dataset_acc/"
+
+mergedC <- read_csv(paste0(filepath2, "mergedC.csv"))
+mergedMA <- read_csv(paste0(filepath2, "mergedMA.csv"))
+mergedMO <- read_csv(paste0(filepath2, "mergedMO.csv"))
+mergedM <- read_csv(paste0(filepath2, "mergedM.csv"))
+allGroups <- read_csv(paste0(filepath2, "allGroups.csv"))
+
+# mergedC_OL <- read_csv(paste0(filepath2, "mergedC_OL.csv"))
+# mergedMA_OL <- read_csv(paste0(filepath2, "mergedMA_OL.csv"))
+# mergedMO_OL <- read_csv(paste0(filepath2, "mergedMO_OL.csv"))
+# mergedM_OL <- read_csv(paste0(filepath2, "mergedM_OL.csv"))
+# allGroups_OL <- read_csv(paste0(filepath2, "allGroups_OL.csv"))
+
+```
+
+## Control
+```{r, message=F, warning=F, echo=F}
+
+# NG >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+data <- 
+  allGroups |> 
+  filter(group == "C")
+
+# Set plot content
+c_acc <- 
+  ggplot(data, aes(validity, percentage)) + 
+  # Set Bars
+  geom_bar(aes(fill = validity),
+           position = "dodge",
+           stat = "summary",
+           fun.y = "mean",
+           width = 0.7) +
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar', 
+               width = 0.1, 
+               coef = 1.5) +
+  # Set plot design
+  geom_jitter(#aes(col = id),
+              width = 0.3,
+              alpha = 0.3) +
+  # scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color = FALSE) +
+  geom_boxplot(width = 0.2,
+               alpha = 1,
+               outlier.shape = NaN) +
+  
+  # Set mean
+  # stat_summary(fun.y = mean, 
+  #              geom = "line",
+  #              aes(group = 1),
+  #              size = 0.8,
+  #              colour = "gray50",
+  #              show.legend = F) +  
+  # stat_summary(fun = mean,
+  #              geom = "point",
+  #              shape = 16,
+  #              size = 1.5,
+  #              colour = "black",
+  #              show.legend = F)  +
+  # Set major labels (title, Y, X axis)
+  labs(title = "Control",
+       x = "Validity",
+       y = "Accuracy (%)") +
+  # Rename each X axis character label
+  # scale_x_discrete(limits = c("invalid", "valid"),
+  #                  labels = c("Invalid", "Valid")) +
+  # Set Y axis range
+  ylim(0, 101) +
+  # Set colour
+  # scale_fill_manual(values=c("coral", "cadetblue1")) +
+  # scale_fill_manual(values=c("gray", "gray")) +
+  # Plot theme
+  theme_bw() +
+  # Remove legend
+  guides(fill=F)
+
+print(c_acc)
+```
+
+## Migraine
+```{r, message=F, warning=F, echo=F}
+
+# NG >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+data <- 
+  allGroups |> 
+  filter(group == "M")
+
+# Set plot content
+m_acc <- 
+  ggplot(data, aes(validity, percentage)) + 
+  # Set Bars
+  geom_bar(aes(fill = validity),
+           position = "dodge",
+           stat = "summary",
+           fun.y = "mean",
+           width = 0.7) +
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar', 
+               width = 0.1, 
+               coef = 1.5) +
+  # Set plot design
+  geom_jitter(#aes(col = id),
+              width = 0.3,
+              alpha = 0.3) +
+  # scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color = FALSE) +
+  geom_boxplot(width = 0.2,
+               alpha = 1,
+               outlier.shape = NaN) +
+  
+  # Set mean
+  # stat_summary(fun.y = mean, 
+  #              geom = "line",
+  #              aes(group = 1),
+  #              size = 0.8,
+  #              colour = "gray50",
+  #              show.legend = F) +  
+  # stat_summary(fun = mean,
+  #              geom = "point",
+  #              shape = 16,
+  #              size = 1.5,
+  #              colour = "black",
+  #              show.legend = F)  +
+  # Set major labels (title, Y, X axis)
+  labs(title = "Migraine",
+       x = "Validity",
+       y = "Accuracy (%)") +
+  # Rename each X axis character label
+  # scale_x_discrete(limits = c("invalid", "valid"),
+  #                  labels = c("Invalid", "Valid")) +
+  # Set Y axis range
+  ylim(0, 101) +
+  # Set colour
+  # scale_fill_manual(values=c("coral", "cadetblue1")) +
+  # scale_fill_manual(values=c("gray", "gray")) +
+  # Plot theme
+  theme_bw() +
+  # Remove legend
+  guides(fill=F)
+
+print(m_acc)
+```
+
+## Control vs Migraine (all data)
+```{r, message=F, warning=F, echo=F}
+all_acc <- c_acc + m_acc +
+  plot_annotation(title = "All Data")
+# ggsave("C:/MATLAB/exp_1/results/figures/mergedC_plot.png", mergedC_plot, height = 5)
+print(all_acc)
+```
+
+
+## NG Overall (Control vs Migraine)
+```{r, message=F, warning=F, echo=F}
+
+tT = "NG"
+
+# Valid >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+data <- 
+  allGroups |> 
+  filter(trialType == tT,
+         validity == "valid")
+
+# Set plot contents
+ng_valid <- 
+  ggplot(data, aes(group, percentage)) + 
+  # Set Bars
+  geom_bar(aes(fill = group),
+           position = "dodge",
+           stat = "summary",
+           fun.y = "mean",
+           width = 0.7) +
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar', 
+               width = 0.1, 
+               coef = 1.5) +
+  # Set plot design
+  geom_jitter(#aes(col = id),
+              width = 0.3,
+              alpha = 0.3) +
+  # scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color = FALSE) +
+  geom_boxplot(width = 0.2,
+               alpha = 1,
+               outlier.shape = NaN) +
+  
+  # Set mean
+  # stat_summary(fun.y = mean, 
+  #              geom = "line",
+  #              aes(group = 1),
+  #              size = 0.8,
+  #              colour = "gray50",
+  #              show.legend = F) +  
+  # stat_summary(fun = mean,
+  #              geom = "point",
+  #              shape = 16,
+  #              size = 1.5,
+  #              colour = "black",
+  #              show.legend = F)  +
+  # Set major labels (title, Y, X axis)
+  labs(title = "Valid",
+       x = "",
+       y = "Accuracy (%)") +
+  # Rename each X axis character label
+  # scale_x_discrete(limits = c("invalid", "valid"),
+  #                  labels = c("Invalid", "Valid")) +
+  # Set Y axis range
+  ylim(0, 101) +
+  # Set colour
+  # scale_fill_manual(values=c("coral", "cadetblue1")) +
+  # scale_fill_manual(values=c("gray", "gray")) +
+  # Plot theme
+  theme_bw() +
+  # Remove legend
+  guides(fill=F)
+
+# Invalid >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+data <-
+  allGroups |>
+  filter(trialType == tT,
+         validity == "invalid")
+
+# Set plot contents
+ng_invalid <-
+  ggplot(data, aes(group, percentage)) +
+  # Set Bars
+  geom_bar(aes(fill = group),
+           position = "dodge",
+           stat = "summary",
+           fun.y = "mean",
+           width = 0.7) +
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar',
+               width = 0.1,
+               coef = 1.5) +
+  # Set plot design
+  geom_jitter(#aes(col = id),
+              width = 0.3,
+              alpha = 0.3) +
+  # scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color = FALSE) +
+  geom_boxplot(width = 0.2,
+               alpha = 1,
+               outlier.shape = NaN) +
+
+  labs(title = "Invalid",
+       x = "",
+       y = "") +
+  ylim(0, 101) +
+  # Plot theme
+  theme_bw() +
+  # Remove legend
+  guides(fill=FALSE)
+
+# Neutral >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+data <-
+  allGroups |>
+  filter(trialType == tT,
+         validity == "neutral")
+
+# Set plot contents
+ng_neutral <-
+  ggplot(data, aes(group, percentage)) +
+  # Set Bars
+  geom_bar(aes(fill = group),
+           position = "dodge",
+           stat = "summary",
+           fun.y = "mean",
+           width = 0.7) +
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar',
+               width = 0.1,
+               coef = 1.5) +
+  # Set plot design
+  geom_jitter(#aes(col = id),
+              width = 0.3,
+              alpha = 0.3) +
+  # scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color = FALSE) +
+  geom_boxplot(width = 0.2,
+               alpha = 1,
+               outlier.shape = NaN) +
+  labs(title = "Neutral",
+       x = "",
+       y = "") +
+  # Set Y axis range
+  ylim(0, 101) +
+  # Plot theme
+  theme_bw() 
+  
+
+# mergedC_plot <- plot_grid(noGratRt_C, gratRt_C, labels = c("A", "B"), ncol = 2, nrow = 1)
+# title <- ggdraw() + 
+#   draw_label(
+#     "All Control - RT Correct Detection",
+#     fontface = 'bold',
+#     x = 0,
+#     hjust = 0) +
+#   theme(plot.margin = margin(0, 0, 0, 3))
+# mergedC_plot <- plot_grid(title, mergedC_plot, ncol = 1, nrow = 2, rel_heights = c(0.05, 1))
+# ggsave("C:/MATLAB/exp_1/results/figures/mergedC_plot.png", mergedC_plot, height = 5)
+# print(mergedC_plot)
+
+ng_acc <- ng_valid + ng_invalid + ng_neutral +
+  plot_annotation(title = "No Gratings")
+ggsave("C:/MATLAB/exp_1/results/figures/ng_acc.jpg", ng_acc, height = 5)
+print(ng_acc)
+```
+
+## G Overall (Control vs Migraine)
+```{r, message=F, warning=F, echo=F}
+
+tT = "G"
+
+# Valid >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+data <- 
+  allGroups |> 
+  filter(trialType == tT,
+         validity == "valid")
+
+# Set plot contents
+g_valid <- 
+  ggplot(data, aes(group, percentage)) + 
+  # Set Bars
+  geom_bar(aes(fill = group),
+           position = "dodge",
+           stat = "summary",
+           fun.y = "mean",
+           width = 0.7) +
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar', 
+               width = 0.1, 
+               coef = 1.5) +
+  # Set plot design
+  geom_jitter(#aes(col = id),
+              width = 0.3,
+              alpha = 0.3) +
+  # scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color = FALSE) +
+  geom_boxplot(width = 0.2,
+               alpha = 1,
+               outlier.shape = NaN) +
+  
+  # Set mean
+  # stat_summary(fun.y = mean, 
+  #              geom = "line",
+  #              aes(group = 1),
+  #              size = 0.8,
+  #              colour = "gray50",
+  #              show.legend = F) +  
+  # stat_summary(fun = mean,
+  #              geom = "point",
+  #              shape = 16,
+  #              size = 1.5,
+  #              colour = "black",
+  #              show.legend = F)  +
+  # Set major labels (title, Y, X axis)
+  labs(title = "Valid",
+       x = "",
+       y = "Accuracy (%)") +
+  # Rename each X axis character label
+  # scale_x_discrete(limits = c("invalid", "valid"),
+  #                  labels = c("Invalid", "Valid")) +
+  # Set Y axis range
+  ylim(0, 101) +
+  # Set colour
+  # scale_fill_manual(values=c("coral", "cadetblue1")) +
+  # scale_fill_manual(values=c("gray", "gray")) +
+  # Plot theme
+  theme_bw() +
+  # Remove legend
+  guides(fill=F)
+
+# Invalid >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+data <-
+  allGroups |>
+  filter(trialType == tT,
+         validity == "invalid")
+
+# Set plot contents
+g_invalid <-
+  ggplot(data, aes(group, percentage)) +
+  # Set Bars
+  geom_bar(aes(fill = group),
+           position = "dodge",
+           stat = "summary",
+           fun.y = "mean",
+           width = 0.7) +
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar',
+               width = 0.1,
+               coef = 1.5) +
+  # Set plot design
+  geom_jitter(#aes(col = id),
+              width = 0.3,
+              alpha = 0.3) +
+  # scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color = FALSE) +
+  geom_boxplot(width = 0.2,
+               alpha = 1,
+               outlier.shape = NaN) +
+
+  labs(title = "Invalid",
+       x = "",
+       y = "") +
+  ylim(0, 101) +
+  # Plot theme
+  theme_bw() +
+  # Remove legend
+  guides(fill=FALSE)
+
+# Neutral >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+data <-
+  allGroups |>
+  filter(trialType == tT,
+         validity == "neutral")
+
+# Set plot contents
+g_neutral <-
+  ggplot(data, aes(group, percentage)) +
+  # Set Bars
+  geom_bar(aes(fill = group),
+           position = "dodge",
+           stat = "summary",
+           fun.y = "mean",
+           width = 0.7) +
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar',
+               width = 0.1,
+               coef = 1.5) +
+  # Set plot design
+  geom_jitter(#aes(col = id),
+              width = 0.3,
+              alpha = 0.3) +
+  # scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color = FALSE) +
+  geom_boxplot(width = 0.2,
+               alpha = 1,
+               outlier.shape = NaN) +
+  labs(title = "Neutral",
+       x = "",
+       y = "") +
+  # Set Y axis range
+  ylim(0, 101) +
+  # Plot theme
+  theme_bw() 
+  
+
+# mergedC_plot <- plot_grid(noGratRt_C, gratRt_C, labels = c("A", "B"), ncol = 2, nrow = 1)
+# title <- ggdraw() + 
+#   draw_label(
+#     "All Control - RT Correct Detection",
+#     fontface = 'bold',
+#     x = 0,
+#     hjust = 0) +
+#   theme(plot.margin = margin(0, 0, 0, 3))
+# mergedC_plot <- plot_grid(title, mergedC_plot, ncol = 1, nrow = 2, rel_heights = c(0.05, 1))
+# ggsave("C:/MATLAB/exp_1/results/figures/mergedC_plot.png", mergedC_plot, height = 5)
+# print(mergedC_plot)
+
+g_acc <- g_valid + g_invalid + g_neutral +
+  plot_annotation(title = "Gratings")
+ggsave("C:/MATLAB/exp_1/results/figures/g_acc.jpg", g_acc, height = 5)
+print(g_acc)
+```
+
+# Statistics
+```{r, include=F, message=FALSE, warning=FALSE, echo=F}
+# Needs raw allGroups
+filepath <- "C:/R/exp_1/results/BEH/merged_group_dataset/"
+allGroups <- read_csv(paste0(filepath, "allGroups.csv"))
+# working data
+data <- allGroups
+```
+
+## Data Configuration
+```{r, message=FALSE, warning=FALSE, echo=F}
+data <- 
+  data |>
+  mutate(group = recode(group, "MA" = "M", # mix migraine groups
+                            "MO" = "M"),
+         Acc = recode(correctAcc, "correct"=0, "incorrect"=1))  |> 
+  # select(id, group, trialType, validity, correctDet, rtDet) |>
+  filter(correctDet == "correct", rtDet >0.2)
+
+data$id <- as.factor(data$id)
+data$group <- as.factor(data$group)
+# data$fixJitData <- as.factor(data$fixJitData)
+data$trialType <- as.factor(data$trialType)
+data$validity <- as.factor(data$validity)
+```
+
+## Full GLMER (Binomial - link: logit) Model
+```{r, message=FALSE, warning=FALSE}
+acc_model <- 
+  glmer(Acc ~ trialType * validity * group + (1|id),
+        data = data,
+        family = binomial(link = "logit"))
+summary(acc_model)
+# resid_panel(acc_model, smoother = TRUE, qqbands = TRUE)
+```
+
+## Full GLMER (Binomial - link: logit) Model (w/o Group Factor)
+```{r, message=FALSE, warning=FALSE}
+acc_model_reduced1 <- 
+  glmer(Acc ~ trialType * validity + (1|id),
+        data = data,
+        family = binomial(link = "logit"))
+summary(acc_model_reduced1)
+# resid_panel(acc_model_reduced1, smoother = TRUE, qqbands = TRUE)
+```
+
+# Model Comparison
+```{r}
+anovaAcc <- 
+  anova(acc_model, acc_model_reduced1) |>
+  mutate(model = c("Reduced Model", "Full
+                   Model"),
+         .before = 1) |> 
+  kbl() |> 
+  kable_classic(full_width = F, 
+                html_font = "Cambria")
+anovaAcc
+
+```
+
+# Table Comparison
+```{r}
+# Full Model
+mod1 <-
+tbl_regression(acc_model,
+               intercept = T,
+               pvalue_fun = label_style_pvalue(digits =2)) |> 
+  # add_global_p() |> 
+  bold_p(t = 0.05) |> 
+  bold_labels() |> 
+  italicize_levels()
+# Reduced Model
+mod2 <-
+  tbl_regression(acc_model_reduced1,
+               intercept = T,
+               pvalue_fun = label_style_pvalue(digits =2)) |> 
+  # add_global_p() |> 
+  bold_p(t = 0.05) |> 
+  bold_labels() |> 
+  italicize_levels()
+# Merge Model
+tbl_merge(tbls = list(mod1, mod2),
+          tab_spanner = c("**Full Model**", "**Reduced Model**")) |> 
+  as_gt() |> 
+  gt::gtsave(filename = "acc_stats.png",
+             path = "C:/MATLAB/exp_1/results/figures")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+# tes <- mergedC
+# 
+# tes1 <- 
+#   tes |> 
+#   mutate(unite(tes, "tt_val", c(trialType, validity), sep = "_"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

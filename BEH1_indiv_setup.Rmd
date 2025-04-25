@@ -1,0 +1,976 @@
+---
+title: "BEH1_indiv_setup"
+author: "Leonardo Sutandi"
+date: "2025-03-18"
+output: html_document
+---
+
+
+This script combines 5 blocks to 1 data set for each participant (change info in "Data set Configuration").
+Script also prepare merging for each group (done in BEH2) and checks for validity effect per participant.
+DON'T FORGET TO TAG REMOVED ARTIFACT-EPOCH IN DATASET CONF
+Look for "# Particpant ID" to configure participant details
+
+
+# R Setup
+```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(patchwork)
+library(cowplot)
+library(tidyverse)
+```
+
+# Data set Configuration
+```{r, message=FALSE, warning=FALSE, include=F}
+
+# Select Participant
+grp <- "C"
+num <- "4"
+ID <- paste0("participant_", num)
+participantSave <- paste0(grp, "_", num)
+```
+
+
+## 1) Merge Blocks
+```{r, message=FALSE, warning=FALSE}
+
+fpath <- paste0("C:/MATLAB/exp_1/results/BEH/", grp, "/", ID, '/')
+
+if(file.exists(paste0(fpath, "block_1.csv"))) {
+  block_1 <- read_csv(paste0(fpath, "block_1.csv"))
+} 
+if(file.exists(paste0(fpath, "block_2.csv"))) {
+  block_2 <- read_csv(paste0(fpath, "block_2.csv"))
+} 
+if(file.exists(paste0(fpath, "block_3.csv"))) {
+  block_3 <- read_csv(paste0(fpath, "block_3.csv"))
+} 
+if(file.exists(paste0(fpath, "block_4.csv"))) {
+  block_4 <- read_csv(paste0(fpath, "block_4.csv"))
+} 
+if(file.exists(paste0(fpath, "block_5.csv"))) {
+  block_5 <- read_csv(paste0(fpath, "block_5.csv"))
+}
+
+# Merge each participant's blocks
+if (exists("block_5") && !is.null(block_5)) {
+  rawData <- full_join(block_1, block_2) |>
+                full_join(block_3) |>
+                full_join(block_4) |>
+                full_join(block_5) |>
+                mutate(id = ID,
+                       group = grp,
+                       .before = 1)
+} else {
+  rawData <- full_join(block_1, block_2) |>
+              full_join(block_3) |>
+              full_join(block_4) |>
+              mutate(id = ID,
+                     group = grp,
+                     .before = 1)
+}
+# # Alternative
+# fileList <- c(paste0(fpath, "block_1.csv"),
+#               paste0(fpath, "block_2.csv"),
+#               paste0(fpath, "block_3.csv"),
+#               paste0(fpath, "block_4.csv")
+#               )
+#
+# rawData <- lapply(fileList, read_csv) |>
+#                 bind_rows() |>
+#                 mutate(id = ID,
+#                        group = grp, 
+#                        .before = 1)
+```
+
+## 2) Recategorise & Relabel
+Make sure triggers are set as character/factor and not numbers. Also relabel for easier input
+```{r, message=FALSE, warning=FALSE}
+# Set all matrices from numeric to character
+rawData$fixJitData <- as.character(rawData$fixJitData)
+rawData$cueJitData <- as.character(rawData$cueJitData)
+rawData$trialType <- as.character(rawData$trialType) # 0 = NoGrat; 1 = Grat > CHANGE TO LABEL
+rawData$cuePos <- as.character(rawData$cuePos) # 0 = left; 1 = right; 2 = Neutral > CHANGE TO LABEL
+rawData$targetLR <- as.character(rawData$targetLR) # 0 = left; 1 = right > CHANGE TO LABEL
+rawData$gapLoc <- as.character(rawData$gapLoc) # specific gap location
+rawData$validity <- as.character(rawData$validity) # 0 = invalid; 1 = valid; 2 = neutral > CHANGE TO LABEL
+rawData$correctDet <- as.character(rawData$correctDet) # 0 = incorrect; 1 = correct > CHANGE TO LABEL
+rawData$correctAcc <- as.character(rawData$correctAcc) # 0 = incorrect; 1 = correct > CHANGE TO LABEL
+
+# Relabel (in case of filter, easier to id)
+rawData <- 
+  rawData |>
+  mutate(trialType = recode(trialType, "0" = "NG", 
+                                       "1" = "G"),
+         
+         cuePos = recode(cuePos, "0" = "left", 
+                                 "1" = "right", 
+                                 "2" ="neutral"),
+         
+         targetLR = recode(targetLR, "0" = "left", 
+                                     "1" = "right"),
+         
+         validity = recode(validity, "0" = "invalid", 
+                                     "1" = "valid", 
+                                     "2" = "neutral"),
+         
+         correctDet = recode(correctDet, "0" = "incorrect", 
+                                         "1" = "correct"),
+         
+         correctAcc = recode(correctAcc, "0" = "incorrect", 
+                                         "1" = "correct")
+         )
+```
+
+## 3) Give Trial Number
+
+This code chunk separates the raw data set by each trialType (i.e. NG L-R-N & G L-R-N) 
+and gives number for each condition group (i.e. #1:end for every trialType) to match with EEG epochs numbers
+
+```{r, message=FALSE, warning=FALSE}
+
+# Fieldtrip only number each epoch, does not seperate them
+# rawData <-
+#   rawData |> 
+#   mutate(numLabel = as.character(1:n()),
+#          .before = 1)
+
+rawData <-
+  rawData |> 
+  mutate(numLabel = 1:n(),
+         .before = 1)
+```
+
+## 4) Initial Cut-off & Outlier Removal
+```{r, message=FALSE, warning=FALSE}
+
+# Set Initial rtDet cut-off
+mean_rt <- mean(rawData$rtDet)
+sd_rt <- sd(rawData$rtDet)
+
+# RT below 02. secs
+cutoffOut1 <-
+  rawData |>
+  filter(rtDet < 0.2) 
+cutoffOut1 <- cutoffOut1$numLabel
+# RT above 2.5 sd
+cutoffOut2 <-
+  rawData |>
+  filter(rtDet > mean_rt + 2.5*sd_rt) 
+cutoffOut2 <- cutoffOut2$numLabel
+
+cutoffOut <- c(cutoffOut1, cutoffOut2)
+
+rawData <-
+  rawData |> 
+  filter(!numLabel %in% cutoffOut)
+
+# <<<<<<<<<<< OUTLIER METHOD >>>>>>>>>>>  
+
+# Z Score
+DataZ <- rawData |>
+  mutate(zscore = (rtDet - mean(rtDet))/sd(rtDet)) |>
+  filter(zscore > -3 & zscore < 3)
+
+# <<<<<<<<<<<<<<<< OR >>>>>>>>>>>>>>>>>>>
+
+# 2sd
+mean_rt <- mean(rawData$rtDet)
+sd_rt <- sd(rawData$rtDet)
+Data2sd <- rawData |>
+  filter(rtDet > mean_rt - 2.5*sd_rt & rtDet < mean_rt + 2.5*sd_rt)
+
+# <<<<<<<<<<<<<<<< OR >>>>>>>>>>>>>>>>>>>
+
+# IQR
+DataIQR <- 
+  rawData|>
+  rstatix::identify_outliers(rtDet)
+# List every rtDet classified as outlier (is.outlier vs is.extreme)
+outlierList <- c(DataIQR$rtDet[DataIQR$is.outlier == TRUE])
+# Remove rows with outlier based on above (DataIQR for visualisation purposes)
+DataIQR <- 
+  rawData|>
+  filter(!rtDet %in% outlierList[])
+
+```
+
+## 5) Compare distribution (before/after)
+```{r, message=FALSE, warning=FALSE}
+# before removal
+distCheck <- 
+  ggplot(rawData, aes(rtDet)) +
+  geom_histogram(bins = 50) + 
+  labs(title = "Before Outlier Removal")
+print(distCheck)
+
+# IQR removal
+distCheckIQR <- 
+  ggplot(DataIQR, aes(rtDet)) + 
+  geom_histogram(bins = 50) + 
+  labs(title = "IQR")
+print(distCheckIQR)
+
+#Z removal
+distCheckZ <- ggplot(DataZ, aes(rtDet)) + geom_histogram(bins = 50) + labs(title = "Z Score")
+print(distCheckZ)
+
+#2SD removal
+distCheck2sd <- ggplot(Data2sd, aes(rtDet)) + geom_histogram(bins = 50) + labs(title = "2SD")
+print(distCheck2sd)
+```
+
+## 6) Summary Descriptive
+```{r, message=FALSE, warning=FALSE}
+# rawData|>
+#   group_by(validity, targetLR, trialType) |>
+#   get_summary_stats(rtDet, type = "mean_sd") |>
+# 
+#   flextable(cwidth = .95) |>
+#   fontsize(size = 8) |>
+#   fontsize(size = 10, part = "header") |>
+# 
+#   set_header_labels(validity = "Validity",
+#                     targetLR = "Left/Right Target",
+#                     trialType = "Gratings",
+#                     variable = "Variable")
+```
+
+# Match data with EEG data
+
+In order to have clean correct EEG data (correct answers) we need to remove the epoch/trial number in the EEG data 
+where it is incorrect behaviourally. Chunk below retrieve the number of the incorrect trials/epochs the retrieved numbers will then be fee to the EEG script, isolating the beh-correct EEG trials only.
+
+## 7) Identify the numLabel for removed BEH outlier (just tagging) - format: #epoch based on reaction time tagging
+Seperated to know how much were excluded per condition. Note: this was build for EEGLAB compatibility, not necessary in fieldtrip (i.e. in how both epoch data)
+
+```{r}
+# NG Left
+behOut <- 
+  rawData|>
+  filter(rtDet %in% outlierList[], # filter/find rows where rtDet is in the outlierList
+         trialType == "NG",
+         cuePos == "left")
+behOut_NG_L <- behOut$numLabel
+
+# NG Right
+behOut <- 
+  rawData|>
+  filter(rtDet %in% outlierList[],
+         trialType == "NG",
+         cuePos == "right")
+behOut_NG_R <- behOut$numLabel
+
+# NG Neutral
+behOut <- 
+  rawData|>
+  filter(rtDet %in% outlierList[],
+         trialType == "NG",
+         cuePos == "neutral")
+behOut_NG_N <- behOut$numLabel
+
+# G Left
+behOut <- 
+  rawData|>
+  filter(rtDet %in% outlierList[],
+         trialType == "G",
+         cuePos == "left")
+behOut_G_L <- behOut$numLabel
+
+# G Right
+behOut <- 
+  rawData|>
+  filter(rtDet %in% outlierList[],
+         trialType == "G",
+         cuePos == "right")
+behOut_G_R <- behOut$numLabel
+
+# G Neutral
+behOut <- 
+  rawData|>
+  filter(rtDet %in% outlierList[],
+         trialType == "G",
+         cuePos == "neutral")
+behOut_G_N <- behOut$numLabel
+
+```
+
+## 8) Identify the numLabel for removed EEG outlier (i.e. bad eeg epochs) - format: #epoch tagging
+```{r, message=FALSE, warning=FALSE}
+
+# bad epochs in eeg data
+eegOut<- c()
+eegOut <- as.integer(eegOut)
+
+```
+
+## 9) Filter out tagged numLabel (EEG & BEH) from data set per trialType-cuePos
+```{r}
+## NG Left
+clean_NG_L <- 
+  rawData |>
+  filter(trialType == "NG",
+         cuePos == "left",
+         !numLabel %in% behOut_NG_L[],
+         !numLabel %in% eegOut[])
+
+## NG Right
+clean_NG_R <- 
+  rawData |>
+  filter(trialType == "NG",
+         cuePos == "right",
+         !numLabel %in% behOut_NG_R[],
+         !numLabel %in% eegOut[])
+
+## NG Neutral
+clean_NG_N <- 
+  rawData |>
+  filter(trialType == "NG",
+         cuePos == "neutral",
+         !numLabel %in% behOut_NG_N[],
+         !numLabel %in% eegOut[])
+
+## G Left
+clean_G_L <- 
+  rawData |>
+  filter(trialType == "G",
+         cuePos == "left",
+         !numLabel %in% behOut_G_L[],
+         !numLabel %in% eegOut[])
+
+## G Right
+clean_G_R <- 
+  rawData |>
+  filter(trialType == "G",
+         cuePos == "right",
+         !numLabel %in% behOut_G_R[],
+         !numLabel %in% eegOut[])
+
+## G Neutral
+clean_G_N <- 
+  rawData |>
+  filter(trialType == "G",
+         cuePos == "neutral",
+         !numLabel %in% behOut_G_N[],
+         !numLabel %in% eegOut[])
+```
+
+## 10) Remerge, filter cut-off, and  save clean (from EEG artifact and BEH outlier) data set
+```{r}
+## Remerge clean data set
+cleanData <- 
+  full_join(clean_NG_L, clean_NG_R) |>
+  full_join(clean_NG_N) |>
+  full_join(clean_G_L) |>
+  full_join(clean_G_R) |>
+  full_join(clean_G_N) 
+# |> 
+#   filter(between(rtDet, 0.2, 5))
+
+write_csv(cleanData, paste0("C:/R/exp_1/results/BEH/indv_merge_dataset/", participantSave, ".csv"))
+```
+## Combine removed numLabel & Export to Matlab
+```{r}
+
+cutoffOut <- data.frame(numLabel = cutoffOut)
+behOut <- data.frame(numLabel = c(behOut_NG_L, behOut_NG_R, behOut_NG_N, 
+                                  behOut_G_L, behOut_G_R, behOut_G_N))
+eegOut <- data.frame(numLabel = eegOut)
+
+beh_out <-
+  full_join(cutoffOut, behOut) |> 
+  full_join(eegOut)
+beh_out <- sort(beh_out$numLabel, decreasing=F)
+beh_out <- as.numeric(beh_out)
+
+# # tidyverse
+# beh_out <-
+#   full_join(cutoffOut, behOut) |> 
+#   full_join(eegOut) |> 
+#   arrange(numLabel)
+# beh_out
+# beh_out <- as.numeric(beh_out)
+
+# fpMat = paste0("C:\MATLAB\exp_1\results\EEG\", grp,  )
+fpMat <- paste0("C:/MATLAB/exp_1/results/EEG/", grp, "/participant_", num, "/")
+R.matlab::writeMat(paste0(fpMat, "beh_out.mat"), beh_out = beh_out)
+```
+
+# Obtain percentage on accurate response
+only for correct detection and accurate response
+```{r, message=F, warning=F}
+# Full data
+# full data for denominator
+denom <- 
+  cleanData |> 
+  filter(correctDet == "correct") # >>>>>>>>>>>>>> all correct detection
+
+acc <-
+  denom |> 
+  filter(correctAcc == "correct") # >>>>>>>>>>>>>> all accurate response
+
+all_all_num_out <- nrow(cleanData) - nrow(acc) # how many excluded if only want accurate reponses
+all_all <- nrow(acc)/nrow(denom) # accurate response / correct detection (change to % below)
+
+# Valid
+denom <- 
+  cleanData |> 
+  filter(validity == "valid",
+         correctDet == "correct")
+
+acc <-
+  denom |> 
+  filter(correctAcc == "correct")
+
+all_valid_num_out <- nrow(filter(cleanData, validity == "valid")) - nrow(acc)
+all_valid <- nrow(acc)/nrow(denom)
+
+# Invalid
+denom <- 
+  cleanData |> 
+  filter(validity == "invalid",
+         correctDet == "correct")
+
+acc <-
+  denom |> 
+  filter(correctAcc == "correct")
+
+all_invalid_num_out <- nrow(filter(cleanData, validity == "invalid")) - nrow(acc)
+all_invalid <- nrow(acc)/nrow(denom)
+
+# Neutral
+denom <- 
+  cleanData |> 
+  filter(validity == "neutral",
+         correctDet == "correct")
+
+acc <-
+  denom |> 
+  filter(correctAcc == "correct")
+
+all_neutral_num_out <- nrow(filter(cleanData, validity == "neutral")) - nrow(acc)
+all_neutral <- nrow(acc)/nrow(denom)
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# NG
+# All
+denom <- 
+  cleanData |> 
+  filter(trialType == "NG",
+         correctDet == "correct")
+
+acc <-
+  denom |> 
+  filter(correctAcc == "correct")
+
+NG_all_num_out <- nrow(filter(cleanData, trialType == "NG")) - nrow(acc)
+NG_all <- nrow(acc)/nrow(denom)
+
+# Valid
+denom <- 
+  cleanData |> 
+  filter(trialType == "NG",
+         validity == "valid",
+         correctDet == "correct")
+
+acc <-
+  denom |> 
+  filter(correctAcc == "correct")
+
+NG_valid_num_out <- nrow(filter(cleanData, trialType == "NG", validity == "valid")) - nrow(acc)
+NG_valid <- nrow(acc)/nrow(denom)
+
+# Invalid
+denom <- 
+  cleanData |> 
+  filter(trialType == "NG",
+         validity == "invalid",
+         correctDet == "correct")
+
+acc <-
+  denom |> 
+  filter(correctAcc == "correct")
+
+NG_invalid_num_out <- nrow(filter(cleanData, trialType == "NG", validity == "invalid")) - nrow(acc)
+NG_invalid <- nrow(acc)/nrow(denom)
+
+# Neutral
+denom <- 
+  cleanData |> 
+  filter(trialType == "NG",
+         validity == "neutral",
+         correctDet == "correct")
+
+acc <-
+  denom |> 
+  filter(correctAcc == "correct")
+
+NG_neutral_num_out <- nrow(filter(cleanData, trialType == "NG", validity == "neutral")) - nrow(acc)
+NG_neutral <- nrow(acc)/nrow(denom)
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# G
+# All
+denom <- 
+  cleanData |> 
+  filter(trialType == "G",
+         correctDet == "correct")
+
+acc <-
+  denom |> 
+  filter(correctAcc == "correct")
+
+G_all_num_out <- nrow(filter(cleanData, trialType == "G")) - nrow(acc)
+G_all <- nrow(acc)/nrow(denom)
+
+# G Valid
+denom <- 
+  cleanData |> 
+  filter(trialType == "G",
+         validity == "valid",
+         correctDet == "correct")
+
+acc <-
+  denom |> 
+  filter(correctAcc == "correct")
+
+G_valid_num_out <- nrow(filter(cleanData, trialType == "G", validity == "valid")) - nrow(acc)
+G_valid <- nrow(acc)/nrow(denom)
+
+# G Invalid
+denom <- 
+  cleanData |> 
+  filter(trialType == "G",
+         validity == "invalid",
+         correctDet == "correct")
+
+acc <-
+  denom |> 
+  filter(correctAcc == "correct")
+
+G_invalid_num_out <- nrow(filter(cleanData, trialType == "G", validity == "invalid")) - nrow(acc)
+G_invalid <- nrow(acc)/nrow(denom)
+
+# G Neutral
+denom <- 
+  cleanData |> 
+  filter(trialType == "G",
+         validity == "neutral",
+         correctDet == "correct")
+
+acc <-
+  denom |> 
+  filter(correctAcc == "correct")
+
+G_neutral_num_out <- nrow(filter(cleanData, trialType == "G", validity == "neutral")) - nrow(acc)
+G_neutral <- nrow(acc)/nrow(denom)
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# Create new data set for percentage
+percAcc <- 
+  data.frame(group = grp,
+             id = ID,
+             all_all = all_all*100,
+             all_valid = all_valid*100,
+             all_invalid = all_invalid*100,
+             all_neutral = all_neutral*100,
+             NG_all = NG_all*100,
+             NG_valid = NG_valid*100,
+             NG_invalid = NG_invalid*100,
+             NG_neutral = NG_neutral*100,
+             G_all = G_all*100,
+             G_valid = G_valid*100,
+             G_invalid = G_invalid*100,
+             G_neutral = G_neutral*100
+             )
+
+# Final accuracy data
+write_csv(percAcc, paste0("C:/R/exp_1/results/BEH/indv_merge_dataset_acc/", participantSave, ".csv"))
+
+# Create new data set for percentage
+num_out <- 
+  data.frame(group = grp,
+             id = ID,
+             all_all = (all_all_num_out/nrow(cleanData))*100, 
+             all_valid = (all_valid_num_out/nrow(filter(cleanData, validity == "valid")))*100,
+             all_invalid = (all_invalid_num_out/nrow(filter(cleanData, validity == "invalid")))*100,
+             all_neutral = (all_neutral_num_out/nrow(filter(cleanData, validity == "neutral")))*100,
+             NG_all = (NG_all_num_out/nrow(filter(cleanData, trialType == "NG")))*100,
+             NG_valid = (NG_valid_num_out/nrow(filter(cleanData, trialType == "NG", validity == "valid")))*100,
+             NG_invalid = (NG_invalid_num_out/nrow(filter(cleanData, trialType == "NG", validity == "invalid")))*100,
+             NG_neutral = (NG_neutral_num_out/nrow(filter(cleanData, trialType == "NG", validity == "neutral")))*100,
+             G_all = (G_all_num_out/nrow(filter(cleanData, trialType == "G")))*100,
+             G_valid = (G_valid_num_out/nrow(filter(cleanData, trialType == "G", validity == "valid")))*100,
+             G_invalid = (G_invalid_num_out/nrow(filter(cleanData, trialType == "G", validity == "invalid")))*100,
+             G_neutral = (G_neutral_num_out/nrow(filter(cleanData, trialType == "G", validity == "neutral")))*100
+             ) |> 
+  pivot_longer(cols = 3:14,
+               names_to = c("trialType", "validity"),
+               names_sep = "_",
+               values_to = "percentage") |> 
+  mutate(percentage = round(percentage, 2))
+
+write_csv(num_out, paste0("C:/R/exp_1/results/BEH/indv_merge_dataset_num_out/", participantSave, ".csv"))
+  
+num_out
+```
+
+## 11) Compare data set (Precaution)
+just in case manual tagging in 8-10 might be wrong, always recheck against the auto IQR removal data set
+```{r, message=FALSE, warning=FALSE}
+# Behaviour outlier removal in the cleanData is based on comparing rtDet in 6 decimal places.
+# Do this to make sure cleanData match DataIQR
+arsenal::comparedf(cleanData, DataIQR)
+```
+
+## 12) Validity Reaction Time Plot - Correct Responses Only
+Check for validity effect, mark participants with no effect
+```{r, message=FALSE, warning=FALSE}
+
+data <- cleanData
+
+# NoGrat
+noGratRt <- 
+  filter(data,
+         trialType == "NG",  # Only want NoGrat
+         correctDet == "correct") # Only want correct response
+# Set plot contents
+noGratRt <- 
+ ggplot(noGratRt, aes(validity, rtDet, fill = validity)) + 
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar', 
+               width = 0.3, 
+               coef = 1.5) +
+  # Set plot design
+  geom_jitter(aes(color=validity), 
+              width = 0.3, 
+              alpha = 0.1) +
+  scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color = FALSE) +
+  geom_boxplot(alpha = 0.8, 
+               outlier.shape = NaN) +
+  # Set mean
+  stat_summary(fun = mean, 
+               geom = "point", 
+               shape = 18, 
+               size = 3, 
+               show.legend = F) +
+  # Set major labels (title, Y, X axis)
+  labs(title = "No Gratings",
+       x = " ",
+       y = "RT (Secs)") +
+  # Rename each X axis character label
+  scale_x_discrete(limits = c("invalid", "valid", "neutral"),
+                   labels = c("Invalid", "Valid", "Neutral")) +
+  # Set Y axis range
+  ylim(0, 3) +
+  # Set colour
+  scale_fill_manual(values=c("coral", "seagreen1", "cadetblue1")) +
+  # Plot theme
+  theme_bw() +
+  # Remove legend
+  guides(fill=FALSE)
+
+
+# Gratings
+gratRt <- filter(data,
+                 trialType == "G",
+                 correctDet == "correct")
+# Set plot contents
+gratRt <- 
+  ggplot(gratRt, aes(validity, rtDet, fill = validity)) + 
+  # Set whiskers
+  stat_boxplot(geom = 'errorbar', 
+               width = 0.3, 
+               coef = 1.5) +
+  # Set plot design
+  geom_jitter(aes(color=validity), 
+              width = 0.3, 
+              alpha = 0.1) +
+  scale_color_manual(values=c("indianred3", "limegreen", "dodgerblue"))  +
+  guides(color = FALSE) +
+  geom_boxplot(alpha = 0.8, 
+               outlier.shape = NaN) +
+  # Set mean
+  stat_summary(fun = mean, 
+               geom = "point", 
+               shape = 18, 
+               size = 3, 
+               show.legend = F) +
+  # Set major labels (title, Y, X axis)
+  labs(title = "No Gratings",
+       x = " ",
+       y = "RT (Secs)") +
+  # Rename each X axis character label
+  scale_x_discrete(limits = c("invalid", "valid", "neutral"),
+                   labels = c("Invalid", "Valid", "Neutral")) +
+  # Set Y axis range
+  ylim(0, 3) +
+  # Set colour
+  scale_fill_manual(values=c("coral", "seagreen1", "cadetblue1")) +
+  # Plot theme
+  theme_bw() +
+  # Remove legend
+  guides(fill=FALSE)
+
+rtPlot <- noGratRt + gratRt
+# ggsave("C:/MATLAB/exp_1/results/figures/RT_plot.png", rtPlot)
+print(rtPlot)
+# rtPlot <- plot_grid(noGratRt, gratRt, labels=c("A", "B"), ncol = 2, nrow = 1)
+# # ggsave("C:/MATLAB/exp_1/results/figures/RT_plot.png", rtPlot)
+# print(rtPlot)
+```
+
+-------------------------------------------------------------------------------------------------------------------------
+
+-------------------------------------------[CTRL + SHIFT + ALT + P] FROM HERE--------------------------------------------
+
+-------------------------------------------------------------------------------------------------------------------------
+
+# Particpant ID
+Configure which participant to preprocess here. Then ctrl+shift+alt+p from above.
+```{r, message=FALSE, warning=FALSE}
+# Clear environment
+rm(list = ls())
+# Select Participant
+grp <- "C"
+num <- "4"
+ID <- paste0("participant_", num)
+participantSave <- paste0(grp, "_", num)
+```
+--------------------------------------------------------------------------------------------------------------------------
+
+## Summary Descriptive
+```{r, message=FALSE, warning=FALSE}
+# rawData|>
+#   group_by(validity, targetLR, trialType) |>
+#   get_summary_stats(rtDet, type = "mean_sd") |>
+# 
+#   flextable(cwidth = .95) |>
+#   fontsize(size = 8) |>
+#   fontsize(size = 10, part = "header") |>
+# 
+#   set_header_labels(validity = "Validity",
+#                     targetLR = "Left/Right Target",
+#                     trialType = "Gratings",
+#                     variable = "Variable")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# NOT DONE
+# New Percentage Data frame
+```{r}
+
+# # Full raw data set for each validity type
+# rawData_Val <- rawData |> filter(validity == "valid")
+# rawData_Inval <-  rawData |> filter(validity == "invalid")
+# rawData_Neut <-  rawData |> filter(validity == "neutral")
+# 
+# # Correct only data set per validity type
+# alphaBeh_Val <- alphaBeh |> filter(validity == "valid")
+# alphaBeh_Inval <-  alphaBeh |> filter(validity == "invalid")
+# alphaBeh_Neut <-  alphaBeh |> filter(validity == "neutral")
+# 
+# # NG raw data set for each validity type
+# rawDataNG <- rawData |> filter(trialType == "NG")
+# rawDataNG_Val <- rawDataNG |> filter(validity == "valid")
+# rawDataNG_Inval <- rawDataNG |> filter(validity == "invalid")
+# rawDataNG_Neut <- rawDataNG |> filter(validity == "neutral")
+# 
+# # G raw data set for each validity type
+# rawDataG <- rawData |> filter(trialType == "G")
+# rawDataG_Val <- rawDataG |> filter(validity == "valid")
+# rawDataG_Inval <- rawDataG |> filter(validity == "invalid")
+# rawDataG_Neut <- rawDataG |> filter(validity == "neutral")
+# 
+# # Correct only NG data set per validity type
+# alphaBehNG <- alphaBeh |> filter(trialType == "NG")
+# alphaBehNG_Val <- alphaBehNG |> filter(validity == "valid")
+# alphaBehNG_Inval <- alphaBehNG |> filter(validity == "invalid")
+# alphaBehNG_Neut <- alphaBehNG |> filter(validity == "neutral")
+# 
+# # Correct only G data set per validity type
+# alphaBehG <- alphaBeh |> filter(trialType == "G")
+# alphaBehG_Val <- alphaBehG |> filter(validity == "valid")
+# alphaBehG_Inval <- alphaBehG |> filter(validity == "invalid")
+# alphaBehG_Neut <- alphaBehG |> filter(validity == "neutral")
+# 
+# percAcc <- data.frame(group = grp,
+#                       id = ID,
+#                       tTcollapsed = (nrow(alphaBeh) / nrow(rawData)),
+#                       tTcollapsed_Val = (nrow(alphaBeh_Val) / nrow(rawData_Val)),
+#                       tTcollapsed_Inval = (nrow(alphaBeh_Inval) / nrow(rawData_Inval)),
+#                       tTcollapsed_Neut = (nrow(alphaBeh_Neut) / nrow(rawData_Neut)),
+#                       allNG = (nrow(alphaBehNG) / nrow(rawDataNG)),
+#                       NG_Val = (nrow(alphaBehNG_Val) / nrow(rawDataNG_Val)),
+#                       NG_Inval = (nrow(alphaBehNG_Inval) / nrow(rawDataNG_Inval)),
+#                       NG_Neut = (nrow(alphaBehNG_Neut) / nrow(rawDataNG_Neut)),
+#                       allG = (nrow(alphaBehG) / nrow(rawDataG)),
+#                       G_Val = (nrow(alphaBehG_Val) / nrow(rawDataG_Val)),
+#                       G_Inval = (nrow(alphaBehG_Inval) / nrow(rawDataG_Inval)),
+#                       G_Neut =(nrow(alphaBehG_Neut) / nrow(rawDataG_Neut))
+#                       )
+# # 
+# # write_csv(percAcc, paste0("C:/R/exp_1/results/BEH/indv_merge_dataset/alphaBeh/", participantSave, ".csv"))
+```
+
+# To view removed BEH label
+```{r}
+# # Easier to view removed label (trial) for each Det and Acc to match EEG Data
+# maxLength <- max(c(length(beh_NG_L_Det), length(beh_NG_L_Acc), 
+#                  length(beh_NG_R_Det), length(beh_NG_R_Acc), 
+#                  length(beh_NG_N_Det), length(beh_NG_N_Acc), 
+#                  length(beh_G_L_Det), length(beh_G_L_Acc), 
+#                  length(beh_G_R_Det), length(beh_G_R_Acc), 
+#                  length(beh_G_N_Det), length(beh_G_N_Acc))) 
+# 
+# eeg_beh_list <- data.frame(NG_L_Det = c(beh_NG_L_Det,rep(NA, maxLength - length(beh_NG_L_Det))),
+#                            NG_L_Acc = c(beh_NG_L_Acc,rep(NA, maxLength - length(beh_NG_L_Acc))),
+#                            NG_R_Det = c(beh_NG_R_Det,rep(NA, maxLength - length(beh_NG_R_Det))),
+#                            NG_R_Acc = c(beh_NG_R_Acc,rep(NA, maxLength - length(beh_NG_R_Acc))),
+#                            NG_N_Det = c(beh_NG_N_Det,rep(NA, maxLength - length(beh_NG_N_Det))),
+#                            NG_N_Acc = c(beh_NG_N_Acc,rep(NA, maxLength - length(beh_NG_N_Acc))),
+#                            G_L_Det = c(beh_G_L_Det,rep(NA, maxLength - length(beh_G_L_Det))),
+#                            G_L_Acc = c(beh_G_L_Acc,rep(NA, maxLength - length(beh_G_L_Acc))),
+#                            G_R_Det = c(beh_G_R_Det,rep(NA, maxLength - length(beh_G_R_Det))),
+#                            G_R_Acc = c(beh_G_R_Acc,rep(NA, maxLength - length(beh_G_R_Acc))),
+#                            G_N_Det = c(beh_G_N_Det,rep(NA, maxLength - length(beh_G_N_Det))),
+#                            G_N_Acc = c(beh_G_N_Acc,rep(NA, maxLength - length(beh_G_N_Acc))))
+```
+
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+## This code chunk seperates the raw data set by each trialType (i.e. NG LRN & G LRN) 
+# and gives number for each conditions (i.e. 1:end for every trialType) to match with EEG epochs
+
+```{r, message=FALSE, warning=FALSE}
+
+# ## NG Left
+# 
+# alphaBeh_NG_L <- rawData |>
+#                     filter(trialType == "NG",
+#                            cuePos == "left") |>
+# # numLabel each trialType with numbers (i.e. new column with numbers starting from 1:last row)
+#                     mutate(numLabel = as.character(1:n()),
+#                            .before = 1)
+# 
+# ## NG Right
+# 
+# alphaBeh_NG_R <- rawData |>
+#                     filter(trialType == "NG",
+#                            cuePos == "right") |>
+# # numLabel each trialType with numbers (i.e. new column with numbers starting from 1:last row)
+#                     mutate(numLabel = as.character(1:n()),
+#                            .before = 1)
+# 
+# ## NG Neutral
+# 
+# alphaBeh_NG_N <- rawData |>
+#                     filter(trialType == "NG",
+#                            cuePos == "neutral") |>
+# # numLabel each trialType with numbers (i.e. new column with numbers starting from 1:last row)
+#                     mutate(numLabel = as.character(1:n()),
+#                            .before = 1)
+# 
+# ## G Left
+# 
+# alphaBeh_G_L <- rawData |>
+#                     filter(trialType == "G",
+#                            cuePos == "left") |>
+# # numLabel each trialType with numbers (i.e. new column with numbers starting from 1:last row)
+#                     mutate(numLabel = as.character(1:n()),
+#                            .before = 1)
+# 
+# ## G Right
+# 
+# alphaBeh_G_R <- rawData |>
+#                     filter(trialType == "G",
+#                            cuePos == "right") |>
+# # numLabel each trialType with numbers (i.e. new column with numbers starting from 1:last row)
+#                     mutate(numLabel = as.character(1:n()),
+#                            .before = 1)
+# 
+# ## G Neutral
+# 
+# alphaBeh_G_N <- rawData |>
+#                     filter(trialType == "G",
+#                            cuePos == "neutral") |>
+# # numLabel each trialType with numbers (i.e. new column with numbers starting from 1:last row)
+#                     mutate(numLabel = as.character(1:n()),
+#                            .before = 1)
+# 
+# ## Remerge seperated data set
+# 
+# rawData <- full_join(alphaBeh_NG_L, alphaBeh_NG_R) |>
+#               full_join(alphaBeh_NG_N)|>
+#               full_join(alphaBeh_G_L)|>
+#               full_join(alphaBeh_G_R)|>
+#               full_join(alphaBeh_G_N)
+
+```
+
+
+
+
+
+
+
+
+

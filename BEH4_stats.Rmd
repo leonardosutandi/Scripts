@@ -1,0 +1,359 @@
+---
+title: "BEH4_stats"
+author: "Leonardo Sutandi"
+date: "2025-03-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lme4)
+library(ggResidpanel) #https://goodekat.github.io/ggResidpanel/articles/introduction.html
+library(rstatix)
+# library(knitr)
+# library(kableExtra)
+```
+
+# Load Dataset
+```{r, message=FALSE, warning=FALSE}
+
+filepath <- "C:/R/exp_1/results/BEH/merged_group_dataset/"
+
+mergedC <- read_csv(paste0(filepath, "mergedC.csv"))
+mergedMA <- read_csv(paste0(filepath, "mergedMA.csv"))
+mergedMO <- read_csv(paste0(filepath, "mergedMO.csv"))
+mergedM <- read_csv(paste0(filepath, "mergedM.csv"))
+allGroups <- read_csv(paste0(filepath, "allGroups.csv"))
+
+# Data to work
+data <- allGroups
+```
+
+# Descriptives
+```{r}
+
+data |>
+  group_by(validity, trialType, group) |>
+  get_summary_stats(rtDet, type = "mean_sd")
+
+  # flextable(cwidth = .95) |>
+  # fontsize(size = 8) |>
+  # fontsize(size = 10, part = "header") |>
+  # 
+  # set_header_labels(validity = "Validity",
+  #                   targetLR = "Left/Right Target",
+  #                   trialType = "Gratings",
+  #                   variable = "Variable")
+```
+
+# LMM Instruction
+
+lmer(outcome ~ 1 + predictor + (1|participant) + (1|item), data = data)
+
+random effects = interior parentheses (1|X) > participant, item; left of | vary by grouping factor on right |
+fixed effect =  not in parentheses > outcome, predictor
+
+Statistical plan
+separated for each attentional orienting groups - cuePos (Left vs Right) for each ROI:
+
+- Random effects: participants
+- Fixed effects: Groups (C vs MA vs MO), trialType (NG vs G)
+
+
+# Filter (CURRENTLY RECODE)
+
+```{r, message=FALSE, warning=FALSE}
+data <- 
+  data |>
+  mutate(group = recode(group, "MA" = "M", # mix migraine groups
+                            "MO" = "M"),
+         Acc = recode(correctAcc, "correct"=0, "incorrect"=1))  |> 
+  # select(id, group, trialType, validity, correctDet, rtDet) |>
+  filter(correctDet == "correct", rtDet >0.2)
+
+data$id <- as.factor(data$id)
+data$group <- as.factor(data$group)
+# data$fixJitData <- as.factor(data$fixJitData)
+data$trialType <- as.factor(data$trialType)
+data$validity <- as.factor(data$validity)
+# data$id <- as.factor(data$cuePos)
+# data$targetLR <- as.factor(data$targetLR)
+# data$correctAcc <- as.factor(data$correctAcc)
+
+# fullData <- fullData |> mutate(log_rt = log(rtDet))
+```
+
+# Vsualise hist RT
+```{r}
+hist(data$rtDet)
+```
+
+
+# Visualise Data Per Subject
+```{r, message=FALSE, warning=FALSE}
+
+perSubject <- 
+  data |>
+  filter(group == "C") |>
+  ggplot(aes(x = validity, y = rtDet)) +
+  geom_boxplot() +
+  stat_summary(fun.y = mean, geom = "line", aes(group=1), colour = "red") +
+  # stat_smooth(method= 'lm', se = FALSE) +
+  scale_x_discrete(limits = c("valid", "neutral", "invalid")) +
+  facet_wrap(~id)
+print(perSubject)
+
+```
+
+
+# Behavioural Data Analysis
+
+```{r, message=FALSE, warning=FALSE}
+
+fullModel <- lmer(rtDet ~ trialType * validity * group + (1|id), 
+                data = data,
+                REML=F)
+summary(fullModel)
+resid_panel(fullModel, smoother = TRUE, qqbands = TRUE)
+
+reducedModel <- lmer(rtDet ~ trialType * validity + (1|id), 
+                data = data,
+                REML=F)
+summary(reducedModel)
+resid_panel(reducedModel, smoother = TRUE, qqbands = TRUE)
+
+# summary(lmm_beh)$coefficients
+anova(fullModel, reducedModel)
+```
+
+# Fitting Gamma
+```{r}
+# Using glmer() link function does not transform the raw data, but transform the prediction.
+
+# Full Gamma Model
+full_bino <- glmer(Acc ~ trialType * validity * group + (1|id),
+                   data = data,
+                   family = binomial(link = "logit"))
+summary(full_bino)
+resid_panel(fullGamma, smoother = TRUE, qqbands = TRUE)
+
+# Reduced Model w/o Group Factor
+reducedGamma <- glmer(rtDet ~ trialType * validity + (1|id),
+                   data = data,
+                   family = Gamma(link = "log"))
+summary(reducedGamma)
+resid_panel(reducedGamma, smoother = TRUE, qqbands = TRUE)
+
+# Reduced Model w/o trialType Factor
+reducedGamma2 <- glmer(rtDet ~ validity + (1|id),
+                   data = data,
+                   family = Gamma(link = "log"))
+summary(reducedGamma2)
+resid_panel(reducedGamma2, smoother = TRUE, qqbands = TRUE)
+
+# flexplot::model.comparison(fullGamma, reducedGamma)
+
+# flexplot(formula =rtDet~validity|group, data=data, method="Gamma" )
+# var<-as.data.frame(VarCorr(fullGamma))
+# varPerc <- (var$vcov[1])/sum(var$vcov)
+
+#library(effects) > plot(allEffects(model), main = "") > 
+```
+
+
+# Model Comparison
+```{r}
+# fullGamma vs w/o group (i.e. does group play a role in RT)
+anova(fullGamma, reducedGamma)
+# fullGamma vs w/o trialType (i.e. does trialType play a role in RT)
+anova(reducedGamma, reducedGamma2)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Residuals
+```{r}
+# # Choose model to plot
+# model <- fullModel
+# 
+# residuals <- residuals(model)
+# 
+# qq <- qqnorm(residuals)
+# qqline(residuals) 
+# res_plot <- plot(fitted(model), residuals, main = "Residual Plot")
+# abline(0,0)
+# hist_qq <- hist(residuals, breaks = 40, main = "Histogram of Residuals", xlab = "Residuals")
+# 
+# qq
+# res_plot
+# hist_qq
+```
+
+# Introduce slope to lmer
+```{r}
+lmm_beh_2 <- lmer(rtDet ~ 1 + trialType + validity + group + (1 + group|id), data = fullData, REML = F)
+summary(lmm_beh_2)
+```
+
+# anova
+```{r, message=FALSE, warning=FALSE}
+anova_beh <- aov(rtDet ~ validity * trialType * group, 
+                 data = fullData)
+summary(anova_beh)
+```
+
+# Anova Post Hoc
+```{r}
+post_hoc <- Post
+```
+
+
+# ANOVA rstatix
+```{r}
+anova_rstatix <- rstatix::anova_test(data = fullData,
+                                     formula = rtDet ~ validity * trialType * group,
+                                     dv = rtDet,
+                                     wid = id,
+                                     between = c(group),
+                                     within = c(validity, trialType),
+                                     effect.size = "pes") #"Effect Size (ƞ2p)"
+get_anova_table(anova_rstatix, correction = "GG")
+
+# #Cohen's D Benchmarks
+# #.01: Small effect size
+# #.06: Medium effect size
+# #.14 or higher: Large effect size
+```
+
+
+# afex::aov
+```{r}
+library(afex)
+
+aov_ez(id = "id", 
+       dv = "rtDet", 
+       data = fullData, 
+       between = c("group"), 
+       within = c("validity", "trialType"),
+       fun_aggregate = mean,
+       type = 3)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Steven Luke (2016) R code for p values in lmer
+```{r}
+###R Code for implementing the recommended methods for obtaining p-values in lme4.
+
+##Using R Package lmerTest to implement Satterthwaite or Kenward-Roger approximations.
+
+library(lmerTest) #Package must be installed first
+
+Model.REML = lmer(Response ~ Condition + (1 + Condition | Subject) + (1 + Condition | Item), REML = TRUE,
+
+data = MyData) #Fitting a model using REML
+
+anova(Model.REML) #Performs F test on fixed effects using Satterthwaite approximation
+
+anova(Model.REML, ddf = “Kenward-Roger”) #Performs F test using Kenward-Roger approximation
+
+summary(Model.REML) #gives model output with estimated df and p values using Satterthwaite
+
+summary(Model.REML, ddf = “Kenward-Roger”) #gives model output using Kenward-Roger
+
+##Using Package afex to implement the Kenward-Roger approximation
+
+library(afex) #Package must be installed first
+
+Model.REML.afex.KR = mixed(Response ~ Condition + (1 + Condition | Subject) + (1 + Condition | Item),
+
+data = MyData, REML = TRUE, method = “KR”) #Tests fixed effects using Kenward-Roger
+
+Model.REML.afex.KR #Returns ANOVA table with F test on fixed effects using Kenward-Roger
+
+Model.ML.afex.LRT = mixed(Response ~ Condition + (1 + Condition | Subject) + (1 + Condition | Item),
+
+data = MyData, REML = FALSE, method = “LRT”) #Performs likelihood ratio tests
+
+Model.ML.afex.LRT #Returns results of Likelihood Ration Test on Fixed Effect.
+
+#Using LRTs is not recommended unless both number of subjects and number of items are quite large (40+)
+
+#Note 1: This code assumes that you are attempting to obtain p-values after having settled on a final random #effects structure. Models shown here are maximal, with all possible random slopes/intercepts.
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
