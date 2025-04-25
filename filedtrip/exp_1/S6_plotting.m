@@ -1,20 +1,20 @@
 %% Load Data Sets
 
-% % Choose group to compute
-% group = 'C';
-% 
-% % Load
-% 
-% filepath_out = ['C:\MATLAB\exp_1\results\EEG\conditions\' group '\']; % C for local, F for pav_SSD, D for Zbook_SSD
-% 
-% % Data sets containing averages
-% load([filepath_out 'ng_left\ng_left_avg.mat']);
-% load([filepath_out 'ng_right\ng_right_avg.mat']);
-% load([filepath_out 'ng_neutral\neutral_avg.mat']);
-% load([filepath_out 'g_left\g_left_avg.mat']);
-% load([filepath_out 'g_right\g_right_avg.mat']);
-% load([filepath_out 'g_neutral\g_neutral_avg.mat']);
-% 
+% Choose group to compute
+group = 'M';
+
+% Load
+
+filepath_out = ['C:\MATLAB\exp_1\results\EEG\conditions\' group '\']; % C for local, F for pav_SSD, D for Zbook_SSD
+
+% Data sets containing averages
+load([filepath_out 'ng_left\ng_left_avg.mat']);
+load([filepath_out 'ng_right\ng_right_avg.mat']);
+load([filepath_out 'ng_neutral\neutral_avg.mat']);
+load([filepath_out 'g_left\g_left_avg.mat']);
+load([filepath_out 'g_right\g_right_avg.mat']);
+load([filepath_out 'g_neutral\g_neutral_avg.mat']);
+
 % % Data sets containing participants (most likely not needed)
 % load([filepath_out 'indiv\ng_left.mat']);
 % load([filepath_out 'indiv\ng_right.mat']);
@@ -23,7 +23,7 @@
 % load([filepath_out 'indiv\g_right.mat']);
 % load([filepath_out 'indiv\g_neutral.mat']);
 
-%% Conditions
+% Conditions
 
 condition_list = {ng_left_avg, ng_right_avg, ng_neutral_avg, g_left_avg, g_right_avg, g_neutral_avg};
 cond_str = {'ng_left', 'ng_right', 'ng_neutral', 'g_left', 'g_right', 'g_neutral'};
@@ -34,10 +34,11 @@ cond_str = {'ng_left', 'ng_right', 'ng_neutral', 'g_left', 'g_right', 'g_neutral
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % TFR Params
-conIdx = 1;
-san = 'no'; % Spatial against neutral contrast
+conIdx = 4;
+san = 'yes'; % Spatial against neutral contrast
 baseline = [-1 -0.2]; % 'no' if san = 'yes'
-scale = [-100 100]; % 'maxmin'
+baselineType = 'absolute';
+scale = [-250 50]; % 'maxmin'
 data = condition_list{conIdx};
 cond = cond_str{conIdx};
 san_cond = cond_str{conIdx};
@@ -66,7 +67,7 @@ elseif isequal(san, 'no')
 end
 
 if isequal(ami, 'yes')
-    topo_scale = [-0.1 0.1];
+    topo_scale = [-0.07 0.07];
 end
 
 % Channel OI
@@ -107,13 +108,17 @@ if isequal(san, 'yes')
     data_san.cfg = [];
 
     if isequal(san_cond, 'ng_left')
-        data_san.powspctrm = mean(ng_left_avg.powspctrm, 1) - mean(ng_neutral_avg.powspctrm, 1);
+        % data_san.powspctrm = mean(ng_left_avg.powspctrm, 1) - mean(ng_neutral_avg.powspctrm, 1);
+        data_san.powspctrm = ng_left_avg.powspctrm - ng_neutral_avg.powspctrm;
     elseif isequal(san_cond, 'ng_right')
-        data_san.powspctrm = mean(ng_right_avg.powspctrm, 1) - mean(ng_neutral_avg.powspctrm, 1);
+        % data_san.powspctrm = mean(ng_right_avg.powspctrm, 1) - mean(ng_neutral_avg.powspctrm, 1);
+        data_san.powspctrm = ng_right_avg.powspctrm - ng_neutral_avg.powspctrm;
     elseif isequal(san_cond, 'g_left')
-        data_san.powspctrm = mean(g_left_avg.powspctrm, 1) - mean(g_neutral_avg.powspctrm, 1);
+        % data_san.powspctrm = mean(g_left_avg.powspctrm, 1) - mean(g_neutral_avg.powspctrm, 1);
+        data_san.powspctrm = g_left_avg.powspctrm - g_neutral_avg.powspctrm;
     elseif isequal(san_cond, 'g_right')
-        data_san.powspctrm = mean(g_right_avg.powspctrm, 1) - mean(g_neutral_avg.powspctrm, 1);
+        % data_san.powspctrm = mean(g_right_avg.powspctrm, 1) - mean(g_neutral_avg.powspctrm, 1);
+        data_san.powspctrm = g_right_avg.powspctrm - g_neutral_avg.powspctrm;
     end
     
     data = data_san;
@@ -149,7 +154,7 @@ if isequal(ami, 'no')
     % cfg.layout = 'biosemi64.lay';
     
     cfg.baseline = baseline;
-    cfg.baselinetype = 'absolute';
+    cfg.baselinetype = baselineType;
     
     cfg.colormap = '*RdBu';
     cfg.colorbar = 'yes';
