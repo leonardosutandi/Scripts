@@ -13,11 +13,14 @@ allC =  {'participant_4', 'participant_8', ...
          'participant_18', 'participant_19', 'participant_22', 'participant_25', ...
          'participant_29', 'participant_31', 'participant_36', 'participant_37', ...
          'participant_38', 'participant_40', 'participant_41'}; %17
-allMA = {};
-allMO = {};
+allMA = {'participant_7', 'participant_9', ...
+         'participant_11', 'participant_20', 'participant_21', ... 
+         'participant_24', 'participant_27a', 'participant_27b', 'participant_30', ...
+         'participant_33', 'participant_34', 'participant_35', 'participant_39'};
+allMO = {'participant_2', 'participant_3', 'participant_10', 'participant_17', 'participant_32'};
 
-group = 'C';
-allGrp = allC;
+group = 'MA';
+allGrp = allMA;
 
 for i = 1:length(allGrp)
 
@@ -67,7 +70,7 @@ cfg.hpfiltord = 2;
 % low-pass
 cfg.lpfilter = 'yes';
 cfg.lpfilttype = 'but';
-cfg.lpfreq = 200;
+cfg.lpfreq = 150;
 % data = ft_preprocessing(cfg);
 
 % Line noise (50Hz) and screen refresh rate (85Hz) removal
@@ -87,11 +90,15 @@ data = ft_preprocessing(cfg);
 % Removing bad channnel before ICA and interpolating it later results in
 % removed channel(s) reordered to the bottom of the list. We don't want
 % this when averaging results from ft_freqanalysis() as each participant
-% will have different channel and number of channel removed. Recall later
-% before computing TFR
+% will have different channel order and number of channel removed. Recall 
+% later before computing TFR.
 
 ori_label = data.label(1:64);
 save([filepath 'ori_label.mat'], 'ori_label', '-v7.3');
+
+if srtcmp(allGrp{i}, 'participant_27a')
+    save(['C:\MATLAB\exp_1\results\EEG\' group '\participant_27\ori_label.mat'], 'ori_label', '-v7.3');
+end
 
 %% Reorder data to the correct label
 
