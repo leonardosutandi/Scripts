@@ -1,19 +1,22 @@
 %% Participant information
-
-group = 'C';
-participantNum = '19';
+clear; clc;
+% _______________________________________________________________________________________
+% _______________________________________________________________________________________
+group = 'MA';
+participantNum = '';
+% _______________________________________________________________________________________
+% _______________________________________________________________________________________
 
 filepath = ['C:\MATLAB\exp_1\results\EEG\' group '\participant_' participantNum '\']; % C for local, F for pav_SSD, D for Zbook_SSD
 
 % Load Data Sets
-
 load([filepath 's2_rbd_done.mat']);
 load([filepath 's2_rbd_ica_done.mat']);
 
 %% ICA Decomp
 
 cfg = [];
-cfg.channel = {'all'};
+cfg.channel = 'all';
 cfg.method = 'runica';
 comp = ft_componentanalysis(cfg, data_ica);
 
@@ -33,7 +36,7 @@ ft_icabrowser(cfg, comp);
 
 %% Identifying artifactual components (FROM POWPLOT)
 
-potBad = [2 4 14 16 18 19 22 25 27 28 33 34 37 48 49 50 62];
+potBad = [4 11 19 20 21 23 26 27 30 31 33 35 36 37 40 44 46 49 54 55 57 61 68];
 
 %%
 cfg = [];
@@ -48,7 +51,7 @@ cfg = [];
 cfg.layout = 'biosemi64.lay';
 cfg.viewmode = 'component';
 cfg.continuous = 'yes';
-cfg.blocksize = [10];
+cfg.blocksize = [8];
 cfg.channel = potBad;
 cfg.ylim = [-5 5];
 cfg.colormap = 'jet';
@@ -57,7 +60,7 @@ ft_databrowser(cfg, comp);
 %% Identifying artifactual components (CHECK UNTAGGED ONLY)
 
 icBatch = {[1:20], [21:40], [41:60], [61:size(comp.label,1)]};
-batch = icBatch{4};
+batch = icBatch{1};
 
 batch = batch(~ismember(batch, potBad));
 
@@ -73,7 +76,7 @@ cfg = [];
 cfg.layout = 'biosemi64.lay';
 cfg.viewmode = 'component';
 cfg.continuous = 'yes';
-cfg.blocksize = [10];
+cfg.blocksize = [8];
 cfg.channel = batch;
 cfg.ylim = [-5 5];
 cfg.colormap = 'jet';
@@ -123,7 +126,8 @@ data = ft_rejectcomponent(cfg, comp, data);
 %% Save Data Set
 save([filepath 's3_ica_done.mat'], 'data', '-v7.3');
 
-clear; clc
+clear; clc;
+disp("Step 3 ICA: DONE")
 
 
 
