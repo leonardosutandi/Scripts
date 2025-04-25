@@ -1,21 +1,27 @@
 %% Participant information
 
-% 'participant_x'
-allC =  {'participant_4', 'participant_8', 'participant_12', 'participant_14', ...
-         'participant_15', 'participant_19', 'participant_22', ...
-         'participant_25', ...
-         'participant_29', 'participant_31', 'participant_36', 'participant_37', ...
-         'participant_38', 'participant_40', 'participant_41'};
-allMA = {};
-allMO = {};
-allC =  {'participant_19'};
+allC =  {'participant_4', 'participant_5', 'participant_6', 'participant_8', ...
+         'participant_12', 'participant_14', 'participant_15', 'participant_19', ...
+         'participant_22', 'participant_25', 'participant_29', 'participant_31', ...
+         'participant_36', 'participant_37', 'participant_40'};
+
+allMA = {'participant_7', 'participant_9', 'participant_11', 'participant_20', ...
+         'participant_21', 'participant_24', 'participant_27', 'participant_30', ...
+         'participant_33', 'participant_34'};
+
+allMO = {'participant_2', 'participant_3', 'participant_10', 'participant_17', ...
+         'participant_32'};
+
+allM = [allMA allMO];
+
 % Choose group to compute
 group = 'C';
-allGrp = allC;
+allGrp = allM;
 conditions = [13, 14, 15, 23, 24, 25]; % 1 = No gratings, 2 = gratings; 3 = left cue, 4 = right cue, 5 = neutral cue
 
-filepath_in = ['C:\MATLAB\exp_1\results\EEG\' group '\']; % C for local, F for pav_SSD, D for Zbook_SSD
-filepath_out = ['C:\MATLAB\exp_1\results\EEG\conditions\' group '\']; % C for local, F for pav_SSD, D for Zbook_SSD
+
+filepath_in = ['C:\MATLAB\exp_1\results\EEG\']; % C for local, F for pav_SSD, D for Zbook_SSD
+filepath_out = [filepath_in 'conditions\' group '\']; % C for local, F for pav_SSD, D for Zbook_SSD
 
 % Computing purposes > fed to ft_freqanalysis()
 compute_alpha = [2 30];
@@ -43,8 +49,20 @@ cfg.keeptrials = 'yes';
 cfg.channel = 'all';
 
 for i = 1:length(allGrp)
-    
-    load([filepath_in allGrp{i} '\s4_epoch_done.mat']);
+
+    % Only for Mixed Migraine
+    if strcmp(group, 'M')
+        if ismember(allGrp{i}, allMA)
+            grp = 'MA';
+        elseif ismember(allGrp{i}, allMO)
+            grp = 'MO';
+        end
+    else
+        grp = group;
+    end
+
+    % filepath_in = ['C:\MATLAB\exp_1\results\EEG\' group '\']; % C for local, F for pav_SSD, D for Zbook_SSD
+    load([filepath_in grp '\' allGrp{i} '\s4_epoch_done.mat']);
 
     for j = 1:length(conditions)
 
@@ -100,13 +118,13 @@ for i = 1:length(allGrp)
     end
 end
 
-% Save individual freqanalysis (per condition) outputs
-save([filepath_out 'indiv\ng_left.mat'], 'ng_left', '-v7.3');
-save([filepath_out 'indiv\ng_right.mat'], 'ng_right', '-v7.3');
-save([filepath_out 'indiv\ng_neutral.mat'], 'ng_neutral', '-v7.3');
-save([filepath_out 'indiv\g_left.mat'], 'g_left', '-v7.3');
-save([filepath_out 'indiv\g_right.mat'], 'g_right', '-v7.3');
-save([filepath_out 'indiv\g_neutral.mat'], 'g_neutral', '-v7.3');
+% % Save individual freqanalysis (per condition) outputs
+% save([filepath_out 'indiv\ng_left.mat'], 'ng_left', '-v7.3');
+% save([filepath_out 'indiv\ng_right.mat'], 'ng_right', '-v7.3');
+% save([filepath_out 'indiv\ng_neutral.mat'], 'ng_neutral', '-v7.3');
+% save([filepath_out 'indiv\g_left.mat'], 'g_left', '-v7.3');
+% save([filepath_out 'indiv\g_right.mat'], 'g_right', '-v7.3');
+% save([filepath_out 'indiv\g_neutral.mat'], 'g_neutral', '-v7.3');
 
 %% Reload (if needed)
 
@@ -138,6 +156,11 @@ maxFreq = freqIdx(1,end);
 timeIdx = find(idx.time >= 0.2 & idx.time <= 1.5);
 minTime = timeIdx(1,1);
 maxTime = timeIdx(1,end);
+% Find Baseline TOI index
+timeIdx_bl = find(idx.time >= -1 & idx.time <= -0.2);
+minBl = timeIdx_bl(1,1);
+maxBl = timeIdx_bl(1,end);
+
 % Find COI index
 [LIA loIdx] = ismember(left_occ, idx.label);
 [LIA roIdx] = ismember(right_occ, idx.label);
@@ -152,99 +175,148 @@ for i = 1:length(cond_eeg)
 
         for k = 1:length(eegIdx)
 
-        cond = cond_eeg{1,i}{1,j}.powspctrm(:, eegIdx{k}, minFreq:maxFreq, minTime:maxTime);        
+            cond = cond_eeg{1,i}{1,j}.powspctrm(:, eegIdx{k}, minFreq:maxFreq, minTime:maxTime);       
+            cond_bl = cond_eeg{1,i}{1,j}.powspctrm(:, eegIdx{k}, minFreq:maxFreq, minBl:maxBl);
 
             % NG Left
             if i == 1 && k == 1
-                tt_ng_left_left_occ{j} = mean(cond, 2:4); % trial-to-trial eeg data averaged across COI
-                avg_ng_left_left_occ{j} = mean(tt_ng_left_left_occ{j}, 1); % eeg data averaged across epochs and COI
+                tt_ng_left_left_occ_avg{j} = mean(cond, 2:4); % trial-to-trial eeg data averaged across COI
+                ng_left_left_occ_avg{j} = mean(tt_ng_left_left_occ_avg{j}, 1); % eeg data averaged across epochs and COI
+                tt_ng_left_left_occ_bl{j} = mean(cond_bl, 2:4); 
+                ng_left_left_occ_bl{j} = mean(tt_ng_left_left_occ_bl{j}, 1);
             elseif i == 1 && k == 2
-                tt_ng_left_right_occ{j} = mean(cond, 2:4);
-                avg_ng_left_right_occ{j} = mean(tt_ng_left_right_occ{j}, 1);
+                tt_ng_left_right_occ_avg{j} = mean(cond, 2:4);
+                ng_left_right_occ_avg{j} = mean(tt_ng_left_right_occ_avg{j}, 1);
+                tt_ng_left_right_occ_bl{j} = mean(cond_bl, 2:4);
+                ng_left_right_occ_bl{j} = mean(tt_ng_left_right_occ_bl{j}, 1);
             elseif i == 1 && k == 3
-                tt_ng_left_left_par{j} = mean(cond, 2:4);
-                avg_ng_left_left_par{j} = mean(tt_ng_left_left_par{j}, 1);
+                tt_ng_left_left_par_avg{j} = mean(cond, 2:4);
+                ng_left_left_par_avg{j} = mean(tt_ng_left_left_par_avg{j}, 1);
+                tt_ng_left_left_par_bl{j} = mean(cond_bl, 2:4);
+                ng_left_left_par_bl{j} = mean(tt_ng_left_left_par_bl{j}, 1);
             elseif i == 1 && k == 4
-                tt_ng_left_right_par{j} = mean(cond, 2:4);
-                avg_ng_left_right_par{j} = mean(tt_ng_left_right_par{j}, 1);
+                tt_ng_left_right_par_avg{j} = mean(cond, 2:4);
+                ng_left_right_par_avg{j} = mean(tt_ng_left_right_par_avg{j}, 1);
+                tt_ng_left_right_par_bl{j} = mean(cond_bl, 2:4);
+                ng_left_right_par_bl{j} = mean(tt_ng_left_right_par_bl{j}, 1);
             end
 
             % NG Right
             if i == 2 && k == 1
-                tt_ng_right_left_occ{j} = mean(cond, 2:4);
-                avg_ng_right_left_occ{j} = mean(tt_ng_right_left_occ{j}, 1);
+                tt_ng_right_left_occ_avg{j} = mean(cond, 2:4);
+                ng_right_left_occ_avg{j} = mean(tt_ng_right_left_occ_avg{j}, 1);
+                tt_ng_right_left_occ_bl{j} = mean(cond_bl, 2:4);
+                ng_right_left_occ_bl{j} = mean(tt_ng_right_left_occ_bl{j}, 1);
             elseif i == 2 && k == 2
-                tt_ng_right_right_occ{j} = mean(cond, 2:4);
-                avg_ng_right_right_occ{j} = mean(tt_ng_right_right_occ{j}, 1);
+                tt_ng_right_right_occ_avg{j} = mean(cond, 2:4);
+                ng_right_right_occ_avg{j} = mean(tt_ng_right_right_occ_avg{j}, 1);
+                tt_ng_right_right_occ_bl{j} = mean(cond_bl, 2:4);
+                ng_right_right_occ_bl{j} = mean(tt_ng_right_right_occ_bl{j}, 1);
             elseif i == 2 && k == 3
-                tt_ng_right_left_par{j} = mean(cond, 2:4);
-                avg_ng_right_left_par{j} = mean(tt_ng_right_left_par{j}, 1);
+                tt_ng_right_left_par_avg{j} = mean(cond, 2:4);
+                ng_right_left_par_avg{j} = mean(tt_ng_right_left_par_avg{j}, 1);
+                tt_ng_right_left_par_bl{j} = mean(cond_bl, 2:4);
+                ng_right_left_par_bl{j} = mean(tt_ng_right_left_par_bl{j}, 1);
             elseif i == 2 && k == 4
-                tt_ng_right_right_par{j} = mean(cond, 2:4);
-                avg_ng_right_right_par{j} = mean(tt_ng_right_right_par{j}, 1);
+                tt_ng_right_right_par_avg{j} = mean(cond, 2:4);
+                ng_right_right_par_avg{j} = mean(tt_ng_right_right_par_avg{j}, 1);
+                tt_ng_right_right_par_bl{j} = mean(cond_bl, 2:4);
+                ng_right_right_par_bl{j} = mean(tt_ng_right_right_par_bl{j}, 1);
             end
-
+        
             % NG Neutral
             if i == 3 && k == 1
-                tt_ng_neutral_left_occ{j} = mean(cond, 2:4);
-                avg_ng_neutral_left_occ{j} = mean(tt_ng_neutral_left_occ{j}, 1);
+                tt_ng_neutral_left_occ_avg{j} = mean(cond, 2:4);
+                ng_neutral_left_occ_avg{j} = mean(tt_ng_neutral_left_occ_avg{j}, 1);
+                tt_ng_neutral_left_occ_bl{j} = mean(cond_bl, 2:4);
+                ng_neutral_left_occ_bl{j} = mean(tt_ng_neutral_left_occ_bl{j}, 1);
             elseif i == 3 && k == 2
-                tt_ng_neutral_right_occ{j} = mean(cond, 2:4);
-                avg_ng_neutral_right_occ{j} = mean(tt_ng_neutral_right_occ{j}, 1);
+                tt_ng_neutral_right_occ_avg{j} = mean(cond, 2:4);
+                ng_neutral_right_occ_avg{j} = mean(tt_ng_neutral_right_occ_avg{j}, 1);
+                tt_ng_neutral_right_occ_bl{j} = mean(cond_bl, 2:4);
+                ng_neutral_right_occ_bl{j} = mean(tt_ng_neutral_right_occ_bl{j}, 1);
             elseif i == 3 && k == 3
-                tt_ng_neutral_left_par{j} = mean(cond, 2:4);
-                avg_ng_neutral_left_par{j} = mean(tt_ng_neutral_left_par{j}, 1);
+                tt_ng_neutral_left_par_avg{j} = mean(cond, 2:4);
+                ng_neutral_left_par_avg{j} = mean(tt_ng_neutral_left_par_avg{j}, 1);
+                tt_ng_neutral_left_par_bl{j} = mean(cond_bl, 2:4);
+                ng_neutral_left_par_bl{j} = mean(tt_ng_neutral_left_par_bl{j}, 1);
             elseif i == 3 && k == 4
-                tt_ng_neutral_right_par{j} = mean(cond, 2:4);
-                avg_ng_neutral_right_par{j} = mean(tt_ng_neutral_right_par{j}, 1);
+                tt_ng_neutral_right_par_avg{j} = mean(cond, 2:4);
+                ng_neutral_right_par_avg{j} = mean(tt_ng_neutral_right_par_avg{j}, 1);
+                tt_ng_neutral_right_par_bl{j} = mean(cond_bl, 2:4);
+                ng_neutral_right_par_bl{j} = mean(tt_ng_neutral_right_par_bl{j}, 1);
             end
-
+   
             % G Left
             if i == 4 && k == 1
-                tt_g_left_left_occ{j} = mean(cond, 2:4); % trial-to-trial eeg data averaged across COI
-                avg_g_left_left_occ{j} = mean(tt_g_left_left_occ{j}, 1); % eeg data averaged across epochs and COI
+                tt_g_left_left_occ_avg{j} = mean(cond, 2:4); % trial-to-trial eeg data averaged across COI
+                g_left_left_occ_avg{j} = mean(tt_g_left_left_occ_avg{j}, 1); % eeg data averaged across epochs and COI
+                tt_g_left_left_occ_bl{j} = mean(cond_bl, 2:4); 
+                g_left_left_occ_bl{j} = mean(tt_g_left_left_occ_bl{j}, 1);
             elseif i == 4 && k == 2
-                tt_g_left_right_occ{j} = mean(cond, 2:4);
-                avg_g_left_right_occ{j} = mean(tt_g_left_right_occ{j}, 1);
+                tt_g_left_right_occ_avg{j} = mean(cond, 2:4);
+                g_left_right_occ_avg{j} = mean(tt_g_left_right_occ_avg{j}, 1);
+                tt_g_left_right_occ_bl{j} = mean(cond_bl, 2:4);
+                g_left_right_occ_bl{j} = mean(tt_g_left_right_occ_bl{j}, 1);
             elseif i == 4 && k == 3
-                tt_g_left_left_par{j} = mean(cond, 2:4);
-                avg_g_left_left_par{j} = mean(tt_g_left_left_par{j}, 1);
+                tt_g_left_left_par_avg{j} = mean(cond, 2:4);
+                g_left_left_par_avg{j} = mean(tt_g_left_left_par_avg{j}, 1);
+                tt_g_left_left_par_bl{j} = mean(cond_bl, 2:4);
+                g_left_left_par_bl{j} = mean(tt_g_left_left_par_bl{j}, 1);
             elseif i == 4 && k == 4
-                tt_g_left_right_par{j} = mean(cond, 2:4);
-                avg_g_left_right_par{j} = mean(tt_g_left_right_par{j}, 1);
+                tt_g_left_right_par_avg{j} = mean(cond, 2:4);
+                g_left_right_par_avg{j} = mean(tt_g_left_right_par_avg{j}, 1);
+                tt_g_left_right_par_bl{j} = mean(cond_bl, 2:4);
+                g_left_right_par_bl{j} = mean(tt_g_left_right_par_bl{j}, 1);
             end
-
+       
             % G Right
             if i == 5 && k == 1
-                tt_g_right_left_occ{j} = mean(cond, 2:4);
-                avg_g_right_left_occ{j} = mean(tt_g_right_left_occ{j}, 1);
+                tt_g_right_left_occ_avg{j} = mean(cond, 2:4);
+                g_right_left_occ_avg{j} = mean(tt_g_right_left_occ_avg{j}, 1);
+                tt_g_right_left_occ_bl{j} = mean(cond_bl, 2:4);
+                g_right_left_occ_bl{j} = mean(tt_g_right_left_occ_bl{j}, 1);
             elseif i == 5 && k == 2
-                tt_g_right_right_occ{j} = mean(cond, 2:4);
-                avg_g_right_right_occ{j} = mean(tt_g_right_right_occ{j}, 1);
+                tt_g_right_right_occ_avg{j} = mean(cond, 2:4);
+                g_right_right_occ_avg{j} = mean(tt_g_right_right_occ_avg{j}, 1);
+                tt_g_right_right_occ_bl{j} = mean(cond_bl, 2:4);
+                g_right_right_occ_bl{j} = mean(tt_g_right_right_occ_bl{j}, 1);
             elseif i == 5 && k == 3
-                tt_g_right_left_par{j} = mean(cond, 2:4);
-                avg_g_right_left_par{j} = mean(tt_g_right_left_par{j}, 1);
+                tt_g_right_left_par_avg{j} = mean(cond, 2:4);
+                g_right_left_par_avg{j} = mean(tt_g_right_left_par_avg{j}, 1);
+                tt_g_right_left_par_bl{j} = mean(cond_bl, 2:4);
+                g_right_left_par_bl{j} = mean(tt_g_right_left_par_bl{j}, 1);
             elseif i == 5 && k == 4
-                tt_g_right_right_par{j} = mean(cond, 2:4);
-                avg_g_right_right_par{j} = mean(tt_g_right_right_par{j}, 1);
+                tt_g_right_right_par_avg{j} = mean(cond, 2:4);
+                g_right_right_par_avg{j} = mean(tt_g_right_right_par_avg{j}, 1);
+                tt_g_right_right_par_bl{j} = mean(cond_bl, 2:4);
+                g_right_right_par_bl{j} = mean(tt_g_right_right_par_bl{j}, 1);
             end
 
             % G Neutral
             if i == 6 && k == 1
-                tt_g_neutral_left_occ{j} = mean(cond, 2:4);
-                avg_g_neutral_left_occ{j} = mean(tt_g_neutral_left_occ{j}, 1);
+                tt_g_neutral_left_occ_avg{j} = mean(cond, 2:4);
+                g_neutral_left_occ_avg{j} = mean(tt_g_neutral_left_occ_avg{j}, 1);
+                tt_g_neutral_left_occ_bl{j} = mean(cond_bl, 2:4);
+                g_neutral_left_occ_bl{j} = mean(tt_g_neutral_left_occ_bl{j}, 1);
             elseif i == 6 && k == 2
-                tt_g_neutral_right_occ{j} = mean(cond, 2:4);
-                avg_g_neutral_right_occ{j} = mean(tt_g_neutral_right_occ{j}, 1);
+                tt_g_neutral_right_occ_avg{j} = mean(cond, 2:4);
+                g_neutral_right_occ_avg{j} = mean(tt_g_neutral_right_occ_avg{j}, 1);
+                tt_g_neutral_right_occ_bl{j} = mean(cond_bl, 2:4);
+                g_neutral_right_occ_bl{j} = mean(tt_g_neutral_right_occ_bl{j}, 1);
             elseif i == 6 && k == 3
-                tt_g_neutral_left_par{j} = mean(cond, 2:4);
-                avg_g_neutral_left_par{j} = mean(tt_g_neutral_left_par{j}, 1);
+                tt_g_neutral_left_par_avg{j} = mean(cond, 2:4);
+                g_neutral_left_par_avg{j} = mean(tt_g_neutral_left_par_avg{j}, 1);
+                tt_g_neutral_left_par_bl{j} = mean(cond_bl, 2:4);
+                g_neutral_left_par_bl{j} = mean(tt_g_neutral_left_par_bl{j}, 1);
             elseif i == 6 && k == 4
-                tt_g_neutral_right_par{j} = mean(cond, 2:4);
-                avg_g_neutral_right_par{j} = mean(tt_g_neutral_right_par{j}, 1);
+                tt_g_neutral_right_par_avg{j} = mean(cond, 2:4);
+                g_neutral_right_par_avg{j} = mean(tt_g_neutral_right_par_avg{j}, 1);
+                tt_g_neutral_right_par_bl{j} = mean(cond_bl, 2:4);
+                g_neutral_right_par_bl{j} = mean(tt_g_neutral_right_par_bl{j}, 1);
             end
-            
-        end
+     
+        end    
     end
 end
 
@@ -258,12 +330,12 @@ dataEEG(1:length(allGrp), :) = [avg_ng_left_left_occ',    avg_ng_left_right_occ'
                                 avg_g_right_left_occ',    avg_g_right_right_occ',    avg_g_right_left_par',    avg_g_right_right_par', ...
                                 avg_g_neutral_left_occ',  avg_g_neutral_right_occ',  avg_g_neutral_left_par',  avg_g_neutral_right_par'];
 % Label the columns    
-labels = {'avg_ng_left_left_occ',    'avg_ng_left_right_occ',    'avg_ng_left_left_par',    'avg_ng_left_right_par', ...
-          'avg_ng_right_left_occ',   'avg_ng_right_right_occ',   'avg_ng_right_left_par',   'avg_ng_right_right_par', ...
-          'avg_ng_neutral_left_occ', 'avg_ng_neutral_right_occ', 'avg_ng_neutral_left_par', 'avg_ng_neutral_right_par', ...
-          'avg_g_left_left_occ',     'avg_g_left_right_occ',     'avg_g_left_left_par',     'avg_g_left_right_par', ...
-          'avg_g_right_left_occ',    'avg_g_right_right_occ',    'avg_g_right_left_par',    'avg_g_right_right_par', ...
-          'avg_g_neutral_left_occ',  'avg_g_neutral_right_occ',  'avg_g_neutral_left_par',  'avg_g_neutral_right_par'};
+labels = {'ng_left_left_occ',    'ng_left_right_occ',    'ng_left_left_par',    'ng_left_right_par', ...
+          'ng_right_left_occ',   'ng_right_right_occ',   'ng_right_left_par',   'ng_right_right_par', ...
+          'ng_neutral_left_occ', 'ng_neutral_right_occ', 'ng_neutral_left_par', 'ng_neutral_right_par', ...
+          'g_left_left_occ',     'g_left_right_occ',     'g_left_left_par',     'g_left_right_par', ...
+          'g_right_left_occ',    'g_right_right_occ',    'g_right_left_par',    'g_right_right_par', ...
+          'g_neutral_left_occ',  'g_neutral_right_occ',  'g_neutral_left_par',  'g_neutral_right_par'};
 
 avg_out = array2table(dataEEG, 'VariableNames', labels);
 writetable(avg_out, [filepath_out 'dataEEG_' group '.csv']);
@@ -384,7 +456,7 @@ for i = 1:length(g_left)
     end
 end
 
-% NG Right
+% G Right
 g_right_avg = data_avg;
 for i = 1:length(g_right)
     g_right_avg.powspctrm{i} = mean((g_right{1,i}.powspctrm), 1);
@@ -397,7 +469,7 @@ for i = 1:length(g_right)
     end
 end
 
-% NG Neutral
+% G Neutral
 g_neutral_avg = data_avg;
 for i = 1:length(g_neutral)
     g_neutral_avg.powspctrm{i} = mean((g_neutral{1,i}.powspctrm), 1);
@@ -410,13 +482,38 @@ for i = 1:length(g_neutral)
     end
 end
 
-% Save averaged
-save([filepath_out 'ng_left\ng_left_avg.mat'], 'ng_left_avg', '-v7.3');
-save([filepath_out 'ng_right\ng_right_avg.mat'], 'ng_right_avg', '-v7.3');
-save([filepath_out 'ng_neutral\neutral_avg.mat'], 'ng_neutral_avg', '-v7.3');
-save([filepath_out 'g_left\g_left_avg.mat'], 'g_left_avg', '-v7.3');
-save([filepath_out 'g_right\g_right_avg.mat'], 'g_right_avg', '-v7.3');
-save([filepath_out 'g_neutral\g_neutral_avg.mat'], 'g_neutral_avg', '-v7.3');
+% % Save averaged
+% save([filepath_out 'ng_left\ng_left_avg.mat'], 'ng_left_avg', '-v7.3');
+% save([filepath_out 'ng_right\ng_right_avg.mat'], 'ng_right_avg', '-v7.3');
+% save([filepath_out 'ng_neutral\neutral_avg.mat'], 'ng_neutral_avg', '-v7.3');
+% save([filepath_out 'g_left\g_left_avg.mat'], 'g_left_avg', '-v7.3');
+% save([filepath_out 'g_right\g_right_avg.mat'], 'g_right_avg', '-v7.3');
+% save([filepath_out 'g_neutral\g_neutral_avg.mat'], 'g_neutral_avg', '-v7.3');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% DONE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 %% Load
 
@@ -457,37 +554,37 @@ save([filepath_out 'g_neutral\g_neutral_avg.mat'], 'g_neutral_avg', '-v7.3');
 
 %% Test plot
 
-% Channel OI
-left_occ = {'P5', 'P3', 'P1', 'PO7', 'PO3', 'O1'};
-right_occ = {'P6', 'P4', 'P2', 'PO8', 'PO4', 'O2'};
-left_par = {'C5', 'C3', 'C1', 'CP5', 'CP3', 'CP1'};
-right_par = {'C6', 'C4', 'C2', 'CP6', 'CP4', 'CP2'};
-allCOI = {left_occ, right_occ, left_par, right_par};
-
-cfg = [];
-
-% cfg.layout = 'biosemi64.lay';
-
-cfg.baseline = [-1 -0.2];
-cfg.baselinetype = 'absolute';
-
-cfg.colormap = '*RdBu';
-cfg.colorbar = 'yes';
-
-cfg.zlim = [-500 500];
-cfg.xlim = [-1 1.5];
-cfg.ylim = [5 30];
-
-% TFR Plotting
-
-for i = 1:length(allCOI)
-
-    cfg.channel = allCOI{i};
-
-    figure;
-    ft_singleplotTFR(cfg, ng_left_avg); 
-
-end
+% % Channel OI
+% left_occ = {'P5', 'P3', 'P1', 'PO7', 'PO3', 'O1'};
+% right_occ = {'P6', 'P4', 'P2', 'PO8', 'PO4', 'O2'};
+% left_par = {'C5', 'C3', 'C1', 'CP5', 'CP3', 'CP1'};
+% right_par = {'C6', 'C4', 'C2', 'CP6', 'CP4', 'CP2'};
+% allCOI = {left_occ, right_occ, left_par, right_par};
+% 
+% cfg = [];
+% 
+% % cfg.layout = 'biosemi64.lay';
+% 
+% cfg.baseline = [-1 -0.2];
+% cfg.baselinetype = 'absolute';
+% 
+% cfg.colormap = '*RdBu';
+% cfg.colorbar = 'yes';
+% 
+% cfg.zlim = [-500 500];
+% cfg.xlim = [-1 1.5];
+% cfg.ylim = [5 30];
+% 
+% % TFR Plotting
+% 
+% for i = 1:length(allCOI)
+% 
+%     cfg.channel = allCOI{i};
+% 
+%     figure;
+%     ft_singleplotTFR(cfg, ng_left_avg); 
+% 
+% end
 
 
 
