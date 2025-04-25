@@ -1,16 +1,18 @@
 %% Participant information
-
-group = 'C';
-participantNum = '19';
+clear; clc;
+% _______________________________________________________________________________________
+% _______________________________________________________________________________________
+group = 'MA';
+participantNum = '';
+% _______________________________________________________________________________________
+% _______________________________________________________________________________________
 
 filepath = ['C:\MATLAB\exp_1\results\EEG\' group '\participant_' participantNum '\']; % C for local, F for pav_SSD, D for Zbook_SSD
 
 % Load Data Set
-
 load([filepath 's3_ica_done.mat']);
 
-%% Channels OI
-
+% Channels OI
 left_occ = {'P5', 'P3', 'P1', 'PO7', 'PO3', 'O1'};
 right_occ = {'P6', 'P4', 'P2', 'PO8', 'PO4', 'O2'};
 left_par = {'C5', 'C3', 'C1', 'CP5', 'CP3', 'CP1'};
@@ -18,8 +20,7 @@ right_par = {'C6', 'C4', 'C2', 'CP6', 'CP4', 'CP2'};
 
 allCOI = [left_occ, right_occ, left_par, right_par];
 
-%% Exclude non-EEG Channels
-
+% Exclude non-EEG Channels
 cfg = [];
 cfg.channel = {'all', '-EXG1', '-EXG2', '-EXG3', '-EXG4', '-EXG5', '-EXG6', '-EXG7', '-EXG8'};
 data = ft_preprocessing(cfg, data);
@@ -33,11 +34,13 @@ cfg.ylim = [-30 30];
 ft_databrowser(cfg, data);
 
 %% Tag bad epoch(s)
-
+% (-) out ow TW; (~) negligible in TW
 % Tag bad epochs (i.e. still not clean OR with zeros)
-eeg_out = [30 36 44 59 71 81 94 100 102 109 100 102 109 117 130 140 151 161 169 175 181 190 192 220 227 280 303 326 338 353 362 366 371 377 424 459 475]; % (-) out ow TW; (~) negligible in TW
+eeg_out = [274 311 347 399 475]; % have bad, - and ~ (use this removes EVERY zero)
 save([filepath 'eeg_out_allbad.mat'], 'eeg_out', '-v7.3');
-eeg_out = [30 36 44 81 109 100 102 109 130 151 161 169 175 181 190 192 227 280 303 326 338 362 366 371 377 424 475]; % for now, let ~ be in
+eeg_out = [274 347 399 475]; % have bad and ~ (use this removes only bad and ~, - left alone)
+save([filepath 'eeg_out_bad-neg.mat'], 'eeg_out', '-v7.3');
+eeg_out = [274 399 475]; % have only bad (use this removes only bad epochs, - ~ left alone)
 save([filepath 'eeg_out.mat'], 'eeg_out', '-v7.3');
 
 %% <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< STOP >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -52,12 +55,12 @@ load([filepath 'eeg_out.mat']); % Load bad epochs via eeg preprocessing (i.e. ch
 load([filepath 'beh_out.mat']); beh_out = beh_out';% load r_out; bad epochs via beh processing (i.e. from r)
 
 bad_epochs = union(eeg_out, beh_out);
-all_trials = [1:1:480];
+all_trials = [1:1:size(data.trial, 2)];
 
 keep_trials = all_trials(~ismember(all_trials, bad_epochs));
 
 cfg = [];
-cfg.trials = keep_trials;
+cfg.trials = keep_trials; % trials out here
 data = ft_preprocessing(cfg, data);
 
 % Check how many epochs left
@@ -101,7 +104,7 @@ data = ft_channelrepair(cfg, data);
 load([filepath 'ori_label.mat']);
 
 % Get mismatched order
-[Lia ori_order] = ismember(ori_label, data.label);
+[LIA ori_order] = ismember(ori_label, data.label);
 
 % reorder data.trial
 for i = 1:length(data.trial)
@@ -114,7 +117,8 @@ data.label = data.label(ori_order);
 %% Save Data Set
 save([filepath 's4_epoch_done.mat'], 'data', '-v7.3');
 
-clear; clc
+clear; clc;
+disp("Step 4 Remove Bad Epoch: DONE")
 
 
 
