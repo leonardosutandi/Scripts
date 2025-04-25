@@ -1,8 +1,8 @@
 fieldtrip scripts
-S1: preprocessing
-S2: remove bad data portions
-S3: compute ICA + remove bad components
-S4: sort + remove bad epochs
-S5: compute TFR
-S6: compute plotting
-ft_trialfun_TOI_trial: epoching criteria
+- S1: preprocessing
+- S2: remove bad data portions
+- S3: compute ICA + remove bad components
+- S4: sort + remove bad epochs
+- S5: compute TFR
+- S6: compute plotting
+- ft_trialfun_TOI_trial: epoching criteria
